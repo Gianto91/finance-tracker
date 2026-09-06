@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local credentials and tokens
+backend/credentials.json
+backend/token.json
+backend/.env
+
+# Local database
+backend/gastos.db
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db

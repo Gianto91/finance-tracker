@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mis Gastos</title>
+<style>
+  :root {
+    --bg: #090909;
+    --bg-soft: #111111;
+    --surface: #1a1a1a;
+    --surface-2: #222222;
+    --card: #2d2d2d;
+    --line: #2d2d2d;
+    --text: #f1f3f5;
+    --text-soft: #b7bec6;
+    --muted: #7d878d;
+    --accent: #34d399;
+    --accent-soft: #10b981;
+    --danger: #f87171;
+    --green: var(--accent);
+    --green-deep: #0d2d1a;
+    --green-card: #1c3f2a;
+    --switch: #efefef;
+    --shadow: rgba(0,0,0,.35);
+    --footer-height: 88px;
+    --radius-xl: 20px;
+    --radius-lg: 14px;
+    --radius-sm: 12px;
+    --radius-xs: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  body {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 18px 18px calc(var(--footer-height) + 28px);
+    background: var(--bg);
+  }
+
+  .app-shell {
+    position: relative;
+    min-height: calc(100vh - 32px);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 2px 2px 0;
+  }
+
+  .topbar h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .bell {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+  }
+
+  .total-card {
+    background: linear-gradient(180deg, rgba(18, 55, 46, 0.96) 0%, rgba(9, 22, 18, 0.98) 100%);
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    border-radius: var(--radius-xl);
+    padding: 18px 20px 22px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .total-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), transparent 60%);
+    pointer-events: none;
+  }
+
+  .total-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .total-label {
+    color: #b8e8af;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .toggle button {
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,.8);
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .toggle button.active {
+    background: var(--accent);
+    color: #0d0d0d;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+
+  .total-value {
+    margin-top: 18px;
+    color: #f3f4f3;
+    font-size: clamp(34px, 9vw, 58px);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .btn {
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius-lg);
+    min-height: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform .15s ease, filter .15s ease;
+    padding: 0 14px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn:active { transform: translateY(1px); }
+
+  .btn-secondary {
+    flex: 1;
+    background: rgba(255,255,255,.05);
+    color: var(--text);
+  }
+
+  .btn-primary {
+    flex: 1;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent));
+    border-color: rgba(52, 211, 153, 0.7);
+    color: #0a0a0a;
+    box-shadow: 0 2px 8px rgba(52, 211, 153, 0.15);
+  }
+
+  .btn:disabled {
+    opacity: .7;
+    cursor: wait;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.04);
+    border-radius: 18px;
+    padding: 14px 12px 12px;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .stat-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+
+  .section-heading {
+    margin: 26px 0 12px;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.9);
+  }
+
+  .chart-card {
+    background: #1f2122;
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: var(--radius-xl);
+    padding: 18px 18px 14px;
+    margin-top: 8px;
+    box-shadow: 0 14px 28px rgba(0,0,0,.22);
+  }
+
+  .chart-title {
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    margin: 0 0 18px;
+    color: #f2f3f4;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .summary-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-lg);
+    padding: 10px 8px 12px;
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    gap: 8px;
+    border: 1px solid rgba(255,255,255,0.02);
+  }
+
+  .chip-icon-box,
+  .gasto-icon,
+  .nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+  }
+
+  .summary-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    font-weight: 600;
+    background: linear-gradient(180deg, rgba(52,211,153,.24), rgba(16,185,129,.12));
+    color: #dfffe0;
+  }
+
+  .summary-item:nth-child(2) .summary-icon { background: linear-gradient(180deg, rgba(82,195,170,.28), rgba(82,195,170,.12)); }
+  .summary-item:nth-child(3) .summary-icon { background: linear-gradient(180deg, rgba(120,167,228,.28), rgba(120,167,228,.12)); }
+  .summary-item:nth-child(4) .summary-icon { background: linear-gradient(180deg, rgba(204,168,240,.26), rgba(204,168,240,.12)); }
+  .summary-item:nth-child(5) .summary-icon { background: linear-gradient(180deg, rgba(236,203,130,.32), rgba(236,203,130,.12)); }
+
+  .summary-label {
+    font-size: 12px;
+    color: #e8ebef;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .summary-amount {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: #f4f4f4;
+  }
+
+  .category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .category-row {
+    display: grid;
+    grid-template-columns: minmax(82px, 1fr) minmax(120px, 2.2fr) auto;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #edf0f2;
+  }
+
+  .category-row-name {
+    font-weight: 600;
+    color: #ebeff3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .category-track {
+    height: 6px;
+    width: 100%;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    display: block;
+  }
+
+  .category-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+  }
+
+  .category-total {
+    font-weight: 500;
+    color: #eaf0f5;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .daily-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .daily-column {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .daily-amount {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    min-height: 12px;
+  }
+
+  .daily-bar {
+    width: min(22px, 100%);
+    min-height: 4px;
+    border-radius: 6px 6px 2px 2px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+  }
+
+  .daily-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .chart-status {
+    color: var(--text-soft);
+    font-size: 12px;
+    text-align: center;
+    padding: 10px 0 4px;
+    min-height: 18px;
+  }
+
+  .list-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.04);
+    border-radius: var(--radius-xl);
+    padding: 8px 8px 4px;
+  }
+
+  .gasto-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+
+  .gasto-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,.04);
+    color: #dde3e8;
+    margin-right: 10px;
+  }
+
+  .gasto-row:last-child { border-bottom: none; }
+
+  .gasto-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .gasto-main {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .gasto-comercio {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gasto-meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 3px;
+    font-weight: 500;
+  }
+
+  .gasto-fecha {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 5px;
+    font-weight: 500;
+  }
+
+  .gasto-monto {
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 28px 10px;
+    font-size: 15px;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 8px 8px;
+  }
+
+  .page-btn {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .page-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .page-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .footer-nav {
+    position: fixed;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: min(480px, calc(100% - 24px));
+    background: rgba(8,8,8,.9);
+    border-top: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px 18px 0 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 10px 12px 12px;
+    backdrop-filter: blur(6px);
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    min-height: 52px;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-item.active {
+    color: var(--text);
+    background: rgba(255,255,255,.03);
+  }
+
+  .nav-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  @media (max-width: 380px) {
+    body { padding-inline: 12px; }
+    .topbar h1 { font-size: 24px; }
+    .total-label { font-size: 15px; }
+    .btn { font-size: 15px; }
+    .chart-wrap { display: block; }
+    .chart-wheel { margin: 0 auto 14px; }
+    .stats { gap: 8px; }
+    .stat-card { min-height: 84px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1 id="saludo">Hola, Gian</h1>
+      <div class="bell" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      </div>
+    </header>
+
+    <section class="total-card">
+      <div class="total-header">
+        <div class="total-label" id="total-label">Gasto este mes</div>
+        <div class="toggle" aria-label="Selector de período">
+          <button id="btn-semana" class="active" onclick="cambiarVista('semana')">Semana</button>
+          <button id="btn-mes" onclick="cambiarVista('mes')">Mes</button>
+        </div>
+      </div>
+      <div class="total-value" id="total-valor">S/ 0.00</div>
+    </section>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="revisarAhora(this)">
+        <svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m4.5 7 7.5 6 7.5-6"/></svg>
+        <span>Revisar</span>
+      </button>
+      <button class="btn btn-primary" onclick="alert('Registro manual: pendiente de implementar según lo necesites')">
+        <span>+ Manual</span>
+      </button>
+    </div>
+
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Promedio diario</div>
+        <div class="stat-value" id="promedio-valor">S/ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Mayor gasto</div>
+        <div class="stat-value" id="mayor-valor">S/ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Top categoría</div>
+        <div class="stat-value" id="top-categoria">-</div>
+      </div>
+    </section>
+
+    <div class="chart-card" id="category-card">
+      <h2 class="chart-title">Gastos por categoría</h2>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="category-list" id="category-list"></div>
+      <div class="daily-chart" id="daily-chart"></div>
+      <div class="chart-status" id="chart-status"></div>
+    </div>
+
+    <div class="section-heading">
+      <h2>Movimientos</h2>
+    </div>
+    <div class="list-card" id="lista-gastos">
+      <div class="empty">Cargando...</div>
+    </div>
+  </div>
+
+  <nav class="footer-nav" aria-label="Navegación principal">
+    <a class="nav-item active" href="#">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg>
+      </span>
+      <span>Inicio</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
+      </span>
+      <span>Movimientos</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 20V8"/><path d="M7 20V4"/><path d="M11 20v-9"/><path d="M15 20V6"/><path d="M19 20v-7"/></svg>
+      </span>
+      <span>Estadísticas</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+<script>
+  const API = ""; // mismo origen, FastAPI sirve esto también
+  let vistaActual = "semana";
+  let gastosActuales = [];
+  let paginaActual = 1;
+  const GASTOS_POR_PAGINA = 10;
+  const CATEGORIAS = ["Comida", "Transporte", "Servicios", "Hogar", "Salud", "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Otros"];
+  const COLORES_CATEGORIA = ["#34d399", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#b49a68", "#8b929d"];
+
+  async function cargarDatos() {
+    const res = await fetch(`${API}/api/gastos/${vistaActual}`);
+    if (!res.ok) throw new Error("No se pudieron cargar los gastos");
+    const gastos = await res.json();
+    gastosActuales = gastos.sort((a, b) => {
+      const diferenciaFecha = new Date(b.fecha) - new Date(a.fecha);
+      return diferenciaFecha || b.id - a.id;
+    });
+    paginaActual = 1;
+    renderTotales(gastosActuales);
+    renderLista();
+    renderChart(gastosActuales);
+  }
+
+  function renderTotales(gastos) {
+    const total = gastos.reduce((sum, g) => sum + g.monto, 0);
+    document.getElementById("total-valor").textContent = `S/ ${total.toFixed(2)}`;
+
+    const ahora = new Date();
+    const inicioPeriodo = vistaActual === "semana"
+      ? new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7))
+      : new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const dias = Math.max(1, Math.floor((ahora - inicioPeriodo) / 86400000) + 1);
+    document.getElementById("total-label").textContent =
+      vistaActual === "semana" ? "Gasto esta semana" : "Gasto este mes";
+    document.getElementById("promedio-valor").textContent = `S/ ${(total / dias).toFixed(2)}`;
+
+    const mayor = gastos.length ? Math.max(...gastos.map(g => g.monto)) : 0;
+    document.getElementById("mayor-valor").textContent = `S/ ${mayor.toFixed(2)}`;
+
+    const porCategoria = {};
+    gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
+    const top = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById("top-categoria").textContent = top ? top[0] : "-";
+  }
+
+  function formatearFecha(fecha) {
+    if (!fecha) return "Fecha no disponible";
+    const fechaObjeto = new Date(fecha);
+    if (Number.isNaN(fechaObjeto.getTime())) return "Fecha no disponible";
+    return fechaObjeto.toLocaleString("es-PE", {
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  function getCategoryIconSvg(index) {
+    const icons = [
+      "<svg viewBox='0 0 24 24'><path d='M3 8.5A2.5 2.5 0 0 1 5.5 6h13A2.5 2.5 0 0 1 21 8.5v7A2.5 2.5 0 0 1 18.5 18h-13A2.5 2.5 0 0 1 3 15.5v-7Z'/><path d='M3 10h18'/><path d='M7 15h3'/></svg>",
+      "<svg viewBox='0 0 24 24'><path d='M4 15.5A7.5 7.5 0 0 1 12 8a7.5 7.5 0 0 1 8 7.5'/><path d='M12 8V4'/><path d='M9 16.5h6'/><path d='M7.5 18.5h9'/></svg>",
+      "<svg viewBox='0 0 24 24'><path d='M3 7.5h18'/><path d='M5 7.5v9.5h14V7.5'/><path d='M8 11.5h8'/></svg>",
+      "<svg viewBox='0 0 24 24'><path d='M3 20V9.5L12 4l9 5.5V20'/><path d='M7 20v-7h10v7'/></svg>",
+      "<svg viewBox='0 0 24 24'><path d='M12 3v18'/><path d='M5 8.5h14'/><path d='M5 15.5h14'/></svg>"
+    ];
+    return icons[index % icons.length];
+  }
+
+  function getMovementIconSvg(categoria = "") {
+    const mapping = {
+      "Comida": "<svg viewBox='0 0 24 24'><path d='M5 4v7'/><path d='M9 4v7'/><path d='M9 11h-4a2 2 0 0 0 0 4h4'/><path d='M12 4v16'/><path d='M16 4v16'/><path d='M19 4v7'/><path d='M19 11h-4a2 2 0 0 0 0 4h4'/></svg>",
+      "Transporte": "<svg viewBox='0 0 24 24'><path d='M3 15.5h18'/><path d='M7 15.5V8.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v7'/><circle cx='8.5' cy='17.5' r='1.5'/><circle cx='15.5' cy='17.5' r='1.5'/></svg>",
+      "Servicios": "<svg viewBox='0 0 24 24'><path d='M4 7.5h16'/><path d='M7 7.5v9h10v-9'/><path d='M10 12h4'/></svg>",
+      "Hogar": "<svg viewBox='0 0 24 24'><path d='M3 10.5 12 4l9 6.5'/><path d='M5 9.5V19h14v-9.5'/><path d='M10 19v-6h4v6'/></svg>",
+      "Salud": "<svg viewBox='0 0 24 24'><path d='M12 21c-5-3.2-8-6.2-8-10A4 4 0 0 1 8 7a4.5 4.5 0 0 1 4 2 4.5 4.5 0 0 1 4-2 4 4 0 0 1 4 4c0 3.8-3 6.8-8 10Z'/></svg>",
+      "Entretenimiento": "<svg viewBox='0 0 24 24'><path d='M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v7A2.5 2.5 0 0 1 17.5 18h-11A2.5 2.5 0 0 1 4 15.5v-7Z'/><path d='M8 6V4'/><path d='M16 6V4'/><path d='M10 12.5h4'/></svg>",
+      "Suscripciones": "<svg viewBox='0 0 24 24'><path d='M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v7A2.5 2.5 0 0 1 17.5 18h-11A2.5 2.5 0 0 1 4 15.5v-7Z'/><path d='M8 12h8'/><path d='M12 8v8'/></svg>",
+      "Impuestos": "<svg viewBox='0 0 24 24'><path d='M12 3v18'/><path d='M5 7.5h14'/><path d='M7 12.5h10'/><path d='M9 17h6'/></svg>",
+      "Finanzas": "<svg viewBox='0 0 24 24'><path d='M3 18.5h18'/><path d='M7 15.5v-5'/><path d='M12 15.5v-8'/><path d='M17 15.5v-11'/></svg>",
+      "Otros": "<svg viewBox='0 0 24 24'><circle cx='12' cy='12' r='8'/><path d='M12 8v4'/><path d='M12 16h.01'/></svg>"
+    };
+    return mapping[categoria] || mapping.Otros;
+  }
+
+  function renderLista() {
+    const cont = document.getElementById("lista-gastos");
+    if (!gastosActuales.length) {
+      cont.innerHTML = `<div class="empty">Todavía no hay gastos registrados en este período.</div>`;
+      return;
+    }
+    const inicio = (paginaActual - 1) * GASTOS_POR_PAGINA;
+    const gastosPagina = gastosActuales.slice(inicio, inicio + GASTOS_POR_PAGINA);
+    const paginas = Math.ceil(gastosActuales.length / GASTOS_POR_PAGINA);
+    cont.innerHTML = gastosPagina.map(g => `
+      <div class="gasto-row">
+        <div class="gasto-main">
+          <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
+          <div class="gasto-info">
+            <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
+            <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
+            <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+          </div>
+        </div>
+        <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
+      </div>
+    `).join("") + `
+      <div class="pagination">
+        <button class="page-btn" onclick="cambiarPagina(-1)" ${paginaActual === 1 ? "disabled" : ""}>Anterior</button>
+        <span class="page-label">Página ${paginaActual} de ${paginas}</span>
+        <button class="page-btn" onclick="cambiarPagina(1)" ${paginaActual === paginas ? "disabled" : ""}>Siguiente</button>
+      </div>`;
+  }
+
+  function mostrarComercio(comercio) {
+    if (!comercio || /max-width|font-size|line-height|background-color/i.test(comercio)) {
+      return "Desconocido";
+    }
+    return comercio;
+  }
+
+  function renderChart(gastos) {
+    const status = document.getElementById("chart-status");
+    const summaryGrid = document.getElementById("summary-grid");
+    const categoryList = document.getElementById("category-list");
+
+    renderDailyChart(gastos);
+
+    const porCategoria = {};
+    gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
+    const categoriasConGasto = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]);
+
+    if (!categoriasConGasto.length) {
+      summaryGrid.innerHTML = "";
+      categoryList.innerHTML = "<div class=\"empty\">Todavía no hay datos para mostrar.</div>";
+      status.textContent = "";
+      return;
+    }
+
+    const top5 = categoriasConGasto.slice(0, 5);
+    const maximoTop = Math.max(...top5.map(([, monto]) => monto), 1);
+    const iconos = ["💳", "📊", "💳", "🏛", "💸"];
+    summaryGrid.innerHTML = top5.map(([categoria, monto], index) => `
+      <div class="summary-item">
+        <div class="summary-icon">
+          ${getCategoryIconSvg(index)}
+        </div>
+        <div class="summary-label">${categoria}</div>
+        <div class="summary-amount">S/ ${monto.toFixed(2)}</div>
+      </div>
+    `).join("");
+
+    const maximoLista = Math.max(...categoriasConGasto.map(([, monto]) => monto), 1);
+    categoryList.innerHTML = categoriasConGasto.map(([categoria, monto]) => {
+      const width = (monto / maximoLista) * 100;
+      const color = COLORES_CATEGORIA[CATEGORIAS.indexOf(categoria) % COLORES_CATEGORIA.length] || "#34d399";
+      return `
+        <div class="category-row">
+          <div class="category-row-name">${categoria}</div>
+          <div class="category-track"><span class="category-fill" style="width:${width}%; background:${color};"></span></div>
+          <div class="category-total">S/ ${monto.toFixed(2)}</div>
+        </div>
+      `;
+    }).join("");
+
+    status.textContent = "";
+  }
+
+  function renderDailyChart(gastos) {
+    const cont = document.getElementById("daily-chart");
+    const grupos = {};
+    gastos.forEach(g => {
+      const fecha = new Date(g.fecha);
+      if (Number.isNaN(fecha.getTime())) return;
+      const clave = claveFecha(fecha);
+      grupos[clave] = (grupos[clave] || 0) + g.monto;
+    });
+
+    let dias;
+    if (vistaActual === "semana") {
+      const ahora = new Date();
+      const lunes = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7));
+      dias = Array.from({ length: 7 }, (_, indice) => {
+        const dia = new Date(lunes);
+        dia.setDate(lunes.getDate() + indice);
+        return dia;
+      });
+    } else {
+      const ahora = new Date();
+      const cantidadDias = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate();
+      dias = Array.from({ length: cantidadDias }, (_, indice) =>
+        new Date(ahora.getFullYear(), ahora.getMonth(), indice + 1)
+      );
+    }
+
+    const valores = dias.map(dia => {
+      const clave = claveFecha(dia);
+      return { dia, monto: grupos[clave] || 0 };
+    });
+    const maximo = Math.max(...valores.map(item => item.monto), 1);
+    cont.innerHTML = valores.map(({ dia, monto }) => `
+      <div class="daily-column" title="${dia.toLocaleDateString("es-PE")}: S/ ${monto.toFixed(2)}">
+        <span class="daily-amount">${monto ? `S/ ${monto.toFixed(0)}` : ""}</span>
+        <div class="daily-bar" style="height:${Math.max(monto ? (monto / maximo) * 100 : 2, 2)}%"></div>
+        <span class="daily-label">${vistaActual === "semana"
+          ? ["L", "M", "X", "J", "V", "S", "D"][dia.getDay() === 0 ? 6 : dia.getDay() - 1]
+          : dia.getDate()}</span>
+      </div>`).join("");
+  }
+
+  function claveFecha(fecha) {
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+  }
+
+  function cambiarPagina(direccion) {
+    const paginas = Math.ceil(gastosActuales.length / GASTOS_POR_PAGINA);
+    paginaActual = Math.min(Math.max(1, paginaActual + direccion), paginas);
+    renderLista();
+    window.scrollTo({ top: document.getElementById("lista-gastos").offsetTop - 16, behavior: "smooth" });
+  }
+
+  function cambiarVista(vista) {
+    vistaActual = vista;
+    document.getElementById("btn-semana").classList.toggle("active", vista === "semana");
+    document.getElementById("btn-mes").classList.toggle("active", vista === "mes");
+    cargarDatos();
+  }
+
+  async function revisarAhora(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;vertical-align:middle;margin-right:6px"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m4.5 7 7.5 6 7.5-6"/></svg>Revisando...';
+
+    try {
+      const res = await fetch(`${API}/api/revisar-ahora`, { method: "POST" });
+      if (!res.ok) throw new Error("No se pudo revisar el correo");
+      await cargarDatos();
+    } catch (error) {
+      console.error(error);
+      console.error("La revisión pudo completarse, pero no se pudo actualizar el dashboard.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;vertical-align:middle;margin-right:6px"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m4.5 7 7.5 6 7.5-6"/></svg>Revisar';
+    }
+  }
+
+  cargarDatos();
+  setInterval(cargarDatos, 60000);
+</script>
+</body>
+</html>
