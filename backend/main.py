@@ -42,15 +42,17 @@ def revisar_correos_nuevos():
                 f"asunto: {correo.get('asunto', '')}"
             )
             continue
-        if not _es_de_hoy(datos.get("fecha")):
+
+        fecha_gasto = datos.get("fecha") or _fecha_del_correo(correo)
+        if not _es_de_hoy(fecha_gasto):
             print(
                 f"  -> Correo fuera de fecha: {correo['id']} | "
-                f"asunto: {correo.get('asunto', '')}"
+                f"asunto: {correo.get('asunto', '')} | fecha: {fecha_gasto}"
             )
             continue
 
         database.guardar_gasto(
-            fecha=datos.get("fecha") or _fecha_del_correo(correo),
+            fecha=fecha_gasto,
             monto=datos["monto"],
             comercio=datos.get("comercio") or "Desconocido",
             categoria=datos.get("categoria") or "Otros",
