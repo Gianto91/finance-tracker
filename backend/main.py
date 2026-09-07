@@ -185,6 +185,16 @@ def eliminar_gasto(gasto_id: int):
     return {"status": "ok", "gasto_id": gasto_id}
 
 
+@app.post("/api/admin/borrar-todos")
+def borrar_todos():
+    """⚠️ SOLO PARA ADMIN: Borra todos los gastos. USAR CON CUIDADO."""
+    conn = database.get_connection()
+    conn.execute("DELETE FROM gastos")
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "message": "Todos los gastos fueron eliminados"}
+
+
 @app.get("/api/gastos/buscar")
 def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str = ""):
     """Busca y filtra gastos por comercio, categoría y rango de fechas."""
