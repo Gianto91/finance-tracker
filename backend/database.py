@@ -26,10 +26,16 @@ def init_db():
             categoria TEXT DEFAULT 'Otros',
             metodo TEXT,
             email_id TEXT UNIQUE,
-            creado_en TEXT NOT NULL
+            creado_en TEXT NOT NULL,
+            estado TEXT DEFAULT 'activo'
         )
     """)
-    conn.commit()
+    # Agregar columna estado si no existe (para tablas existentes)
+    try:
+        conn.execute("ALTER TABLE gastos ADD COLUMN estado TEXT DEFAULT 'activo'")
+        conn.commit()
+    except:
+        pass
     conn.close()
 
 
@@ -117,7 +123,7 @@ def resumen_semana():
         hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
     rows = conn.execute(
-        "SELECT * FROM gastos WHERE fecha >= ? ORDER BY fecha DESC", (desde,)
+        "SELECT * FROM gastos WHERE fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (desde,)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -129,7 +135,7 @@ def resumen_mes():
         day=1, hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
     rows = conn.execute(
-        "SELECT * FROM gastos WHERE fecha >= ? ORDER BY fecha DESC", (desde,)
+        "SELECT * FROM gastos WHERE fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (desde,)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -137,7 +143,7 @@ def resumen_mes():
 
 def todos_los_gastos():
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM gastos ORDER BY fecha DESC").fetchall()
+    rows = conn.execute("SELECT * FROM gastos WHERE estado = 'activo' ORDER BY fecha DESC").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -168,14 +174,14 @@ def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None,
 
 def eliminar_gasto(gasto_id):
     conn = get_connection()
-    conn.execute("DELETE FROM gastos WHERE id = ?", (gasto_id,))
+    conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ?", (gasto_id,))
     conn.commit()
     conn.close()
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta=""):
     conn = get_connection()
-    query = "SELECT * FROM gastos WHERE 1=1"
+    query = "SELECT * FROM gastos WHERE estado = 'activo'"
     params = []
     if q:
         query += " AND lower(comercio) LIKE ?"

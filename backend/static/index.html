@@ -16,8 +16,8 @@
     --text: #f1f3f5;
     --text-soft: #b7bec6;
     --muted: #7d878d;
-    --accent: #34d399;
-    --accent-soft: #10b981;
+    --accent: #E64A19;
+    --accent-soft: #D84315;
     --danger: #f87171;
     --green: var(--accent);
     --green-deep: #0d2d1a;
@@ -814,7 +814,7 @@
   let paginaActual = 1;
   const GASTOS_POR_PAGINA = 10;
   const CATEGORIAS = ["Comida", "Transporte", "Servicios", "Hogar", "Salud", "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Otros"];
-  const COLORES_CATEGORIA = ["#34d399", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#b49a68", "#8b929d"];
+  const COLORES_CATEGORIA = ["#E64A19", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#b49a68", "#8b929d"];
   let chartsInstances = {};
 
   async function cargarDatos() {
@@ -976,7 +976,7 @@
     const maximoLista = Math.max(...categoriasConGasto.map(([, monto]) => monto), 1);
     categoryList.innerHTML = categoriasConGasto.map(([categoria, monto]) => {
       const width = (monto / maximoLista) * 100;
-      const color = COLORES_CATEGORIA[CATEGORIAS.indexOf(categoria) % COLORES_CATEGORIA.length] || "#34d399";
+      const color = COLORES_CATEGORIA[CATEGORIAS.indexOf(categoria) % COLORES_CATEGORIA.length] || "#E64A19";
       return `
         <div class="category-row">
           <div class="category-row-name">${categoria}</div>
@@ -1182,7 +1182,7 @@
 
     const labels = Object.keys(porCategoria);
     const datos = Object.values(porCategoria);
-    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
     const ctx = document.getElementById("chartPieInicio");
     if (!ctx) return;
@@ -1225,7 +1225,7 @@
 
     const labels = Object.keys(porCategoria);
     const datos = Object.values(porCategoria);
-    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
     document.getElementById("stat-total").textContent = `S/ ${datos.reduce((a,b)=>a+b, 0).toFixed(2)}`;
     document.getElementById("stat-promedio").textContent = `S/ ${(datos.reduce((a,b)=>a+b, 0) / Math.max(1, gastos.length)).toFixed(2)}`;
@@ -1241,7 +1241,7 @@
 
         const labels = Object.keys(porCategoria);
         const datos = Object.values(porCategoria);
-        const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+        const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
         dibujarGraficoPie(labels, datos, colores);
         dibujarGraficoBar(labels, datos, colores);
@@ -1301,7 +1301,7 @@
         datasets: [{
           label: "Gasto diario",
           data: datos,
-          borderColor: "#34d399",
+          borderColor: "#E64A19",
           backgroundColor: "rgba(52, 211, 153, 0.1)",
           tension: 0.4,
           fill: true
