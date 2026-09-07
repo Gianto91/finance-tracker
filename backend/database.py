@@ -276,21 +276,29 @@ def _migrate_legacy_data():
 
 
 def migrar_gastos_legacy(user_id: str):
-    """Migra todos los gastos de 'legacy-user' al user_id especificado."""
+    """Migra todos los gastos de 'legacy-user' o NULL al user_id especificado."""
     conn = get_connection()
     try:
-        # Actualizar gastos legacy
-        conn.execute(
-            "UPDATE gastos SET user_id = ? WHERE user_id = 'legacy-user'",
-            (user_id,)
-        )
-        # Actualizar emails ignorados legacy
-        conn.execute(
-            "UPDATE emails_ignorados SET user_id = ? WHERE user_id = 'legacy-user'",
-            (user_id,)
-        )
-        conn.commit()
-        print(f"✅ Gastos legacy migrados al usuario {user_id}")
+        # Contar cuántos hay que migrar
+        legacy_count = conn.execute(
+            "SELECT COUNT(*) as cnt FROM gastos WHERE user_id IS NULL OR user_id = 'legacy-user'"
+        ).fetchone()["cnt"]
+
+        if legacy_count > 0:
+            # Actualizar gastos legacy (NULL o 'legacy-user')
+            conn.execute(
+                "UPDATE gastos SET user_id = ? WHERE user_id IS NULL OR user_id = 'legacy-user'",
+                (user_id,)
+            )
+            # Actualizar emails ignorados legacy
+            conn.execute(
+                "UPDATE emails_ignorados SET user_id = ? WHERE user_id IS NULL OR user_id = 'legacy-user'",
+                (user_id,)
+            )
+            conn.commit()
+            print(f"✅ {legacy_count} gastos legacy migrados al usuario {user_id}")
+        else:
+            print(f"ℹ️ No hay gastos legacy para migrar")
     except Exception as e:
         print(f"❌ Error al migrar gastos legacy: {e}")
     conn.close()
