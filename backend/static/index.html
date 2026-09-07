@@ -1208,10 +1208,12 @@
     document.getElementById(`tab-${tab}`).classList.add("active");
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
     event.target.closest(".nav-item").classList.add("active");
-    if (tab === "estadisticas") {
+    if (tab === "inicio") {
+      vistaActual = "dia";
+      cargarDatos();
+    } else if (tab === "estadisticas") {
       setTimeout(() => actualizarGraficos(), 100);
-    }
-    if (tab === "movimientos") {
+    } else if (tab === "movimientos") {
       vistaActual = "todos";
       cargarDatos();
     }
