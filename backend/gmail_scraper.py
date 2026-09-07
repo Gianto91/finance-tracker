@@ -40,9 +40,6 @@ def _query_hoy():
 
 
 def _get_service():
-    if not CREDENTIALS_PATH.exists():
-        print("❌ credentials.json no encontrado")
-        return None
     creds = None
 
     token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
