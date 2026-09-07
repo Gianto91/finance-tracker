@@ -22,7 +22,7 @@ PATRON_MONTO_YAPE = re.compile(
     re.IGNORECASE,
 )
 PATRON_MONTO_INTERBANK_PLIN = re.compile(
-    rf"monto\s+y\s+moneda\s*(?:[:\-])?\s*(?:S/\.?\s*)?({NUMERO_MONTO})",
+    rf"monto\s+y\s+moneda[\s\S]*?(?:S/\.?\s*)?({NUMERO_MONTO})",
     re.IGNORECASE,
 )
 PATRON_MONTO_LIGO = re.compile(
