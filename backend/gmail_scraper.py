@@ -41,28 +41,46 @@ def _query_hoy():
 
 def _get_service():
     if not CREDENTIALS_PATH.exists():
+        print("❌ credentials.json no encontrado")
         return None
     creds = None
 
     token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
     if token_json_env:
-        creds = Credentials.from_authorized_user_info(
-            json.loads(token_json_env), SCOPES
-        )
+        try:
+            print("📌 Leyendo token desde variable de entorno...")
+            creds = Credentials.from_authorized_user_info(
+                json.loads(token_json_env), SCOPES
+            )
+            print("✅ Token cargado desde env")
+        except Exception as e:
+            print(f"❌ Error al cargar token: {e}")
+            return None
     elif TOKEN_PATH.exists():
+        print("📌 Leyendo token desde archivo local...")
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+        print("✅ Token cargado desde archivo")
+    else:
+        print("❌ No hay token (env ni local)")
+        return None
 
     if not creds or not creds.valid:
+        print(f"⚠️  Credenciales inválidas. Expired: {creds.expired if creds else 'N/A'}")
         if creds and creds.expired and creds.refresh_token:
+            print("🔄 Refrescando token...")
             creds.refresh(Request())
+            print("✅ Token refrescado")
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(CREDENTIALS_PATH), SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-        if TOKEN_PATH.exists():
-            TOKEN_PATH.write_text(creds.to_json())
-    return build("gmail", "v1", credentials=creds)
+            print("❌ No se puede refrescar, necesita re-autorizar")
+            return None
+    else:
+        print("✅ Credenciales válidas")
+
+    try:
+        return build("gmail", "v1", credentials=creds)
+    except Exception as e:
+        print(f"❌ Error al construir servicio de Gmail: {e}")
+        return None
 
 
 class _TextoHTML(HTMLParser):
