@@ -100,12 +100,14 @@ def _reparar_gastos_anteriores():
 
 
 def _fecha_del_correo(correo):
+    from zoneinfo import ZoneInfo
     try:
-        return parsedate_to_datetime(correo["fecha"]).astimezone().replace(
-            tzinfo=None
-        ).isoformat()
+        dt = parsedate_to_datetime(correo["fecha"])
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+        return dt.astimezone(ZoneInfo("America/Lima")).replace(tzinfo=None).isoformat()
     except (KeyError, TypeError, ValueError):
-        return datetime.now().isoformat()
+        return datetime.now(ZoneInfo("America/Lima")).isoformat()
 
 
 def _es_de_hoy(fecha):
