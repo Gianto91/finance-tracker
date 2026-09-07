@@ -276,6 +276,9 @@ def parsear_correo(texto_correo: str) -> dict:
     """
     texto_min = texto_correo.lower()
 
+    if "constancia de pago plin" in texto_min:
+        print(f"DEBUG PARSER: Texto de Interbank recibido (primeros 500 chars):\n{texto_correo[:500]}\n")
+
     if _es_correo_informativo(texto_correo):
         return {"es_gasto": False}
 
