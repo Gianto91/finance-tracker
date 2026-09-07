@@ -38,11 +38,16 @@ def obtener_user_id(request: Request) -> str:
     return user_id
 
 
-def revisar_correos_nuevos():
+def revisar_correos_nuevos(user_id: str = "legacy-user"):
     """Job que corre cada N minutos: trae correos, los parsea y guarda."""
-    print(f"[{datetime.now()}] ✨ NUEVO: Revisando correos nuevos...")
-    _reparar_gastos_anteriores()
-    correos = gmail_scraper.obtener_correos_nuevos(database.gasto_ya_existe)
+    print(f"[{datetime.now()}] ✨ NUEVO: Revisando correos para user_id={user_id}...")
+    _reparar_gastos_anteriores(user_id)
+
+    # Crear callback que filtre por user_id
+    def gasto_existe_para_user(email_id):
+        return database.gasto_ya_existe(email_id, user_id)
+
+    correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user)
     guardados = 0
     descartados = 0
 
@@ -72,6 +77,7 @@ def revisar_correos_nuevos():
             categoria=datos.get("categoria") or "Otros",
             metodo=datos.get("metodo") or "Otro",
             email_id=correo["id"],
+            user_id=user_id,
         )
         telegram_notifier.notificar_gasto(
             monto=datos["monto"],
@@ -88,13 +94,13 @@ def revisar_correos_nuevos():
     )
 
 
-def _reparar_gastos_anteriores():
-    gastos = database.todos_los_gastos()
+def _reparar_gastos_anteriores(user_id: str = "legacy-user"):
+    gastos = database.todos_los_gastos(user_id)
     if not gastos:
         return
 
     correos = gmail_scraper.obtener_correos_por_ids(
-        [gasto["email_id"] for gasto in gastos]
+        [gasto["email_id"] for gasto in gastos if gasto.get("email_id")]
     )
     reparados = 0
     for correo in correos:
@@ -166,9 +172,9 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 
 
 @app.post("/api/revisar-ahora")
-def revisar_ahora():
+def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
-    revisar_correos_nuevos()
+    revisar_correos_nuevos(user_id)
     return {"status": "ok"}
 
 
