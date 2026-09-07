@@ -4,7 +4,7 @@ from email.utils import parsedate_to_datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
-from fastapi import FastAPI, Cookie, HTTPException
+from fastapi import FastAPI, Cookie, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -24,6 +24,18 @@ app.add_middleware(
 
 database.init_db()
 database.normalizar_categorias_existentes()
+
+
+def obtener_user_id(request: Request) -> str:
+    """Extrae user_id del JWT en el header Authorization."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return "legacy-user"
+    token = auth_header.split(" ")[1]
+    user_id = auth.verify_jwt_token(token)
+    if not user_id:
+        return "legacy-user"
+    return user_id
 
 
 def revisar_correos_nuevos():
@@ -131,26 +143,26 @@ scheduler.start()
 
 
 @app.get("/api/gastos/dia")
-def gastos_dia():
+def gastos_dia(user_id: str = Depends(obtener_user_id)):
     from datetime import datetime
     hoy = datetime.now().date().isoformat()
-    gastos = database.todos_los_gastos()
+    gastos = database.todos_los_gastos(user_id)
     return [g for g in gastos if g["fecha"].startswith(hoy)]
 
 
 @app.get("/api/gastos/semana")
-def gastos_semana():
-    return database.resumen_semana()
+def gastos_semana(user_id: str = Depends(obtener_user_id)):
+    return database.resumen_semana(user_id)
 
 
 @app.get("/api/gastos/mes")
-def gastos_mes():
-    return database.resumen_mes()
+def gastos_mes(user_id: str = Depends(obtener_user_id)):
+    return database.resumen_mes(user_id)
 
 
 @app.get("/api/gastos/todos")
-def gastos_todos():
-    return database.todos_los_gastos()
+def gastos_todos(user_id: str = Depends(obtener_user_id)):
+    return database.todos_los_gastos(user_id)
 
 
 @app.post("/api/revisar-ahora")
@@ -161,7 +173,7 @@ def revisar_ahora():
 
 
 @app.post("/api/gastos/crear")
-def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: str = "Otro"):
+def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: str = "Otro", user_id: str = Depends(obtener_user_id)):
     """Crea un gasto manualmente (útil en modo demo sin Gmail)."""
     database.guardar_gasto(
         fecha=datetime.now().isoformat(),
@@ -169,23 +181,24 @@ def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: s
         comercio=comercio,
         categoria=categoria,
         metodo=metodo,
-        email_id=f"manual-{datetime.now().timestamp()}"
+        email_id=f"manual-{datetime.now().timestamp()}",
+        user_id=user_id
     )
     return {"status": "ok", "monto": monto, "comercio": comercio}
 
 
 @app.put("/api/gastos/{gasto_id}")
 def editar_gasto(gasto_id: int, monto: float = None, comercio: str = None,
-                  categoria: str = None, metodo: str = None):
+                  categoria: str = None, metodo: str = None, user_id: str = Depends(obtener_user_id)):
     """Edita un gasto existente."""
     database.actualizar_gasto_por_id(gasto_id, monto, comercio, categoria, metodo)
     return {"status": "ok", "gasto_id": gasto_id}
 
 
 @app.delete("/api/gastos/{gasto_id}")
-def eliminar_gasto(gasto_id: int):
+def eliminar_gasto(gasto_id: int, user_id: str = Depends(obtener_user_id)):
     """Elimina un gasto."""
-    database.eliminar_gasto(gasto_id)
+    database.eliminar_gasto(gasto_id, user_id)
     return {"status": "ok", "gasto_id": gasto_id}
 
 
@@ -200,9 +213,9 @@ def borrar_todos():
 
 
 @app.get("/api/gastos/buscar")
-def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str = ""):
+def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str = "", user_id: str = Depends(obtener_user_id)):
     """Busca y filtra gastos por comercio, categoría y rango de fechas."""
-    return database.buscar_gastos(q, categoria, desde, hasta)
+    return database.buscar_gastos(q, categoria, desde, hasta, user_id)
 
 
 @app.get("/api/auth/login")
