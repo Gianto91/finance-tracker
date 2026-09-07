@@ -983,6 +983,7 @@
 
   function renderDailyChart(gastos) {
     const cont = document.getElementById("daily-chart");
+    if (!cont) return;
     const grupos = {};
     gastos.forEach(g => {
       const fecha = new Date(g.fecha);
