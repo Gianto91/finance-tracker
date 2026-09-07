@@ -121,7 +121,7 @@ def _es_de_hoy(fecha):
 
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
-intervalo = int(os.environ.get("SCAN_INTERVAL_MINUTES", 2))
+intervalo = int(os.environ.get("SCAN_INTERVAL_MINUTES", 2))  # 2 minutos es el estándar
 scheduler.add_job(revisar_correos_nuevos, "interval", minutes=intervalo)
 scheduler.start()
 

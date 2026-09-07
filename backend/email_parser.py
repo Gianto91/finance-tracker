@@ -97,7 +97,7 @@ PALABRAS_METODO = {
 # Categorías disponibles para el dashboard.
 CATEGORIAS = [
     "Comida", "Transporte", "Servicios", "Hogar", "Salud",
-    "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Otros",
+    "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Transferencias", "Otros",
 ]
 
 # Palabras clave -> categoría. Se revisan en este orden.
@@ -156,6 +156,11 @@ def _detectar_metodo(texto: str) -> str:
 
 def _detectar_categoria(texto: str, comercio: str) -> str:
     comercio_min = comercio.lower()
+
+    # Plin y Yape son transferencias, no gastos
+    if "plin" in comercio_min or "yape" in comercio_min:
+        return "Transferencias"
+
     for palabra, categoria in PALABRAS_CATEGORIA.items():
         if palabra in comercio_min:
             return categoria
