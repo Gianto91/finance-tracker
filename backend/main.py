@@ -124,6 +124,14 @@ scheduler.add_job(revisar_correos_nuevos, "interval", minutes=intervalo)
 scheduler.start()
 
 
+@app.get("/api/gastos/dia")
+def gastos_dia():
+    from datetime import datetime
+    hoy = datetime.now().date().isoformat()
+    gastos = database.todos_los_gastos()
+    return [g for g in gastos if g["fecha"].startswith(hoy)]
+
+
 @app.get("/api/gastos/semana")
 def gastos_semana():
     return database.resumen_semana()

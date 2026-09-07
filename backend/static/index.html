@@ -619,8 +619,8 @@
       <div class="total-header">
         <div class="total-label" id="total-label">Gasto este mes</div>
         <div class="toggle" aria-label="Selector de período">
-          <button id="btn-semana" class="active" onclick="cambiarVista('semana')">Semana</button>
-          <button id="btn-mes" onclick="cambiarVista('mes')">Mes</button>
+          <button id="btn-dia" class="active" onclick="cambiarVista('dia')">Día</button>
+          <button id="btn-semana" onclick="cambiarVista('semana')">Semana</button>
         </div>
       </div>
       <div class="total-value" id="total-valor">S/ 0.00</div>
@@ -809,7 +809,7 @@
 
 <script>
   const API = "";
-  let vistaActual = "mes";
+  let vistaActual = "dia";
   let gastosActuales = [];
   let paginaActual = 1;
   const GASTOS_POR_PAGINA = 10;
@@ -841,12 +841,17 @@
     document.getElementById("total-valor").textContent = `S/ ${total.toFixed(2)}`;
 
     const ahora = new Date();
-    const inicioPeriodo = vistaActual === "semana"
-      ? new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7))
-      : new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    let inicioPeriodo;
+    if (vistaActual === "dia") {
+      inicioPeriodo = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    } else if (vistaActual === "semana") {
+      inicioPeriodo = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7));
+    } else {
+      inicioPeriodo = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    }
     const dias = Math.max(1, Math.floor((ahora - inicioPeriodo) / 86400000) + 1);
     document.getElementById("total-label").textContent =
-      vistaActual === "semana" ? "Gasto esta semana" : "Gasto este mes";
+      vistaActual === "dia" ? "Gasto hoy" : vistaActual === "semana" ? "Gasto esta semana" : "Gasto este mes";
     document.getElementById("promedio-valor").textContent = `S/ ${(total / dias).toFixed(2)}`;
 
     const mayor = gastos.length ? Math.max(...gastos.map(g => g.monto)) : 0;
@@ -1040,8 +1045,8 @@
 
   function cambiarVista(vista) {
     vistaActual = vista;
+    document.getElementById("btn-dia").classList.toggle("active", vista === "dia");
     document.getElementById("btn-semana").classList.toggle("active", vista === "semana");
-    document.getElementById("btn-mes").classList.toggle("active", vista === "mes");
     cargarDatos();
   }
 
