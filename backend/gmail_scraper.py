@@ -36,7 +36,7 @@ REMITENTES_BANCARIOS = [
 
 def _query_hoy():
     remitentes = " OR ".join(REMITENTES_BANCARIOS)
-    return f"from:({remitentes}) newer_than:2d"
+    return f"from:({remitentes}) newer_than:1h"
 
 
 def _get_service():
