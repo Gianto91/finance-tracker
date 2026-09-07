@@ -275,6 +275,27 @@ def _migrate_legacy_data():
     conn.close()
 
 
+def migrar_gastos_legacy(user_id: str):
+    """Migra todos los gastos de 'legacy-user' al user_id especificado."""
+    conn = get_connection()
+    try:
+        # Actualizar gastos legacy
+        conn.execute(
+            "UPDATE gastos SET user_id = ? WHERE user_id = 'legacy-user'",
+            (user_id,)
+        )
+        # Actualizar emails ignorados legacy
+        conn.execute(
+            "UPDATE emails_ignorados SET user_id = ? WHERE user_id = 'legacy-user'",
+            (user_id,)
+        )
+        conn.commit()
+        print(f"✅ Gastos legacy migrados al usuario {user_id}")
+    except Exception as e:
+        print(f"❌ Error al migrar gastos legacy: {e}")
+    conn.close()
+
+
 def get_or_create_user(google_id: str, email: str, nombre: str) -> dict:
     """Obtiene o crea un usuario basado en google_id."""
     conn = get_connection()

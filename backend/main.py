@@ -245,9 +245,10 @@ def auth_callback(code: str):
     if not result:
         return {"error": "Error durante la autenticación"}
 
-    user_id, jwt_token = result
+    user_id, jwt_token, user_info = result
 
-    # Retornar HTML que guarda el token en localStorage y redirige al dashboard
+    # Retornar HTML que guarda el token y nombre en localStorage y redirige al dashboard
+    nombre = user_info.get("name", "Usuario").split()[0] if user_info else "Usuario"
     html = f"""
     <html>
         <head>
@@ -256,6 +257,8 @@ def auth_callback(code: str):
         <body>
             <script>
                 localStorage.setItem('jwt_token', '{jwt_token}');
+                localStorage.setItem('user_name', '{nombre}');
+                localStorage.setItem('user_id', '{user_id}');
                 window.location.href = '/';
             </script>
         </body>
@@ -268,6 +271,13 @@ def auth_callback(code: str):
 def auth_logout():
     """Logout: el cliente elimina el JWT token."""
     return {"status": "ok", "message": "Sesión cerrada. Elimina el token del cliente."}
+
+
+@app.post("/api/auth/migrate-legacy")
+def auth_migrate_legacy(user_id: str = Depends(obtener_user_id)):
+    """Migra gastos legacy al usuario actual."""
+    database.migrar_gastos_legacy(user_id)
+    return {"status": "ok", "message": "Datos migrados"}
 
 
 # Sirve el dashboard (index.html) en la raíz

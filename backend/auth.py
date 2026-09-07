@@ -86,10 +86,10 @@ def get_google_user_info(access_token: str) -> Optional[dict]:
         return None
 
 
-def handle_oauth_callback(code: str) -> Optional[tuple[str, str]]:
+def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
     """
     Maneja el callback de OAuth.
-    Retorna (user_id, jwt_token) si es exitoso, None si falla.
+    Retorna (user_id, jwt_token, user_info) si es exitoso, None si falla.
     """
     # Intercambiar código por token
     token_response = exchange_google_code(code)
@@ -123,4 +123,4 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str]]:
     jwt_token = create_jwt_token(user["id"])
 
     print(f"✅ Usuario autenticado: {email} (ID: {user['id']})")
-    return (user["id"], jwt_token)
+    return (user["id"], jwt_token, user_info)
