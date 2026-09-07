@@ -36,7 +36,9 @@ REMITENTES_BANCARIOS = [
 
 def _query_hoy():
     remitentes = " OR ".join(REMITENTES_BANCARIOS)
-    return f"from:({remitentes}) newer_than:0d"
+    # Usar fecha explícita en formato YYYY/MM/DD (Gmail lo entiende mejor)
+    hoy = datetime.now(ZoneInfo("America/Lima")).date()
+    return f"from:({remitentes}) after:{hoy.isoformat().replace('-', '/')}"
 
 
 def _get_service():
