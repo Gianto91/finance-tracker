@@ -130,6 +130,20 @@ MESES_CORTOS = {
     "ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6,
     "jul": 7, "ago": 8, "sep": 9, "oct": 10, "nov": 11, "dic": 12,
 }
+MESES_INGLES = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
 
 
 def _detectar_metodo(texto: str) -> str:
@@ -212,6 +226,11 @@ def _detectar_fecha(texto: str):
             re.IGNORECASE,
         ),
         re.compile(
+            r"(\d{1,2})\s+([a-z]{3,})[,]?\s+(\d{4})\s+"
+            r"(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)",
+            re.IGNORECASE,
+        ),
+        re.compile(
             r"(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(?:hrs?|h\.)?",
             re.IGNORECASE,
         ),
@@ -224,14 +243,21 @@ def _detectar_fecha(texto: str):
         match = patron.search(texto)
         if not match:
             continue
-        if indice < 2:
-            dia, mes, anio, hora, minuto, periodo = match.groups()
-            mes_numero = MESES.get(mes.lower()) if indice == 0 else MESES_CORTOS.get(mes.lower()[:3])
+        if indice < 3:
+            if indice == 0:
+                dia, mes, anio, hora, minuto, periodo = match.groups()
+                mes_numero = MESES.get(mes.lower())
+            elif indice == 1:
+                dia, mes, anio, hora, minuto, periodo = match.groups()
+                mes_numero = MESES_CORTOS.get(mes.lower()[:3])
+            else:
+                dia, mes, anio, hora, minuto, periodo = match.groups()
+                mes_numero = MESES_INGLES.get(mes.lower()) or MESES_INGLES.get(mes.lower()[:3])
             if not mes_numero:
                 continue
             hora = int(hora) % 12 + (12 if periodo.lower().startswith("p") else 0)
             return datetime(int(anio), mes_numero, int(dia), hora, int(minuto)).isoformat()
-        if indice == 2:
+        if indice == 3:
             anio, mes, dia, hora, minuto, segundos = match.groups()
             return datetime(int(anio), int(mes), int(dia), int(hora), int(minuto), int(segundos or 0)).isoformat()
         dia, mes, anio, hora, minuto = match.groups()
