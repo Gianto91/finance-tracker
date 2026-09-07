@@ -148,12 +148,15 @@ def obtener_correos_nuevos(ya_procesados_fn):
         print("⚠️  credentials.json no configurado. Modo demo: sin scraping de Gmail")
         return []
     query = _query_hoy()
+    print(f"DEBUG: Query Gmail: {query}")
     resultado = service.users().messages().list(userId="me", q=query).execute()
     mensajes = resultado.get("messages", [])
+    print(f"DEBUG: Se encontraron {len(mensajes)} mensajes en Gmail con la búsqueda")
 
     correos = []
     for m in mensajes:
         if ya_procesados_fn(m["id"]):
+            print(f"DEBUG: Email {m['id']} ya fue procesado, saltando")
             continue
         msg = service.users().messages().get(
             userId="me", id=m["id"], format="full"
@@ -163,7 +166,10 @@ def obtener_correos_nuevos(ya_procesados_fn):
             fecha_local = datetime.fromtimestamp(
                 fecha_gmail, ZoneInfo("America/Lima")
             ).date()
-            if fecha_local != datetime.now(ZoneInfo("America/Lima")).date():
+            hoy = datetime.now(ZoneInfo("America/Lima")).date()
+            print(f"DEBUG: Email {m['id']}: fecha_local={fecha_local}, hoy={hoy}")
+            if fecha_local != hoy:
+                print(f"DEBUG: Email {m['id']} es de otro día, descartando")
                 continue
         headers = {h["name"]: h["value"] for h in msg["payload"]["headers"]}
         texto = _extraer_texto(msg["payload"])
