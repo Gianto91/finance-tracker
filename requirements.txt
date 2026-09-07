@@ -9,4 +9,4 @@ requests==2.31.0
 pydantic==2.5.0
 python-multipart==0.0.6
 httpx==0.25.2
-PyJWT==2.8.1
+PyJWT==2.8.0
