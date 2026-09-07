@@ -26,7 +26,7 @@ database.normalizar_categorias_existentes()
 
 def revisar_correos_nuevos():
     """Job que corre cada N minutos: trae correos, los parsea y guarda."""
-    print(f"[{datetime.now()}] Revisando correos nuevos...")
+    print(f"[{datetime.now()}] ✨ NUEVO: Revisando correos nuevos...")
     _reparar_gastos_anteriores()
     correos = gmail_scraper.obtener_correos_nuevos(database.gasto_ya_existe)
     guardados = 0
