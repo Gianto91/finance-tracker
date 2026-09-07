@@ -42,8 +42,15 @@ def _get_service():
     if not CREDENTIALS_PATH.exists():
         return None
     creds = None
-    if TOKEN_PATH.exists():
+
+    token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
+    if token_json_env:
+        creds = Credentials.from_authorized_user_info(
+            eval(token_json_env), SCOPES
+        )
+    elif TOKEN_PATH.exists():
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -52,7 +59,8 @@ def _get_service():
                 str(CREDENTIALS_PATH), SCOPES
             )
             creds = flow.run_local_server(port=0)
-        TOKEN_PATH.write_text(creds.to_json())
+        if TOKEN_PATH.exists():
+            TOKEN_PATH.write_text(creds.to_json())
     return build("gmail", "v1", credentials=creds)
 
 
