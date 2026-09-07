@@ -606,6 +606,17 @@
 </style>
 </head>
 <body>
+  <!-- Login Screen -->
+  <div id="login-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+    <div style="text-align:center; margin-bottom:40px;">
+      <div style="font-size:60px; margin-bottom:20px;">🐜</div>
+      <h1 style="margin:0; font-size:28px; margin-bottom:8px;">Hormiquita</h1>
+      <p style="color:var(--text-soft); margin:0;">Gestión de Gastos</p>
+    </div>
+    <button onclick="location.href='/api/auth/login'" style="padding:14px 32px; background:var(--accent); border:none; border-radius:10px; color:#000; font-weight:600; cursor:pointer; font-size:15px; margin-bottom:16px;">Entrar con Google</button>
+    <p style="color:var(--muted); font-size:12px; text-align:center;">Conecta tu cuenta de Google para comenzar a rastrear tus gastos.</p>
+  </div>
+
   <div class="app-shell">
     <!-- TAB: INICIO -->
     <div id="tab-inicio" class="tab-content active">
@@ -613,13 +624,16 @@
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 28px;">🐜</span>
         <div>
-          <div style="font-size: 12px; color: var(--text-soft); margin-bottom: 2px;">Hormiguita</div>
+          <div style="font-size: 12px; color: var(--text-soft); margin-bottom: 2px;">Hormiquita</div>
           <h1 id="saludo" style="margin: 0;">Hola, Gian</h1>
         </div>
       </div>
-      <button onclick="location.reload()" aria-label="Refrescar página" style="background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; display: flex; align-items: center; justify-content: center;">
-        <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/></svg>
-      </button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button onclick="location.reload()" aria-label="Refrescar página" style="background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/></svg>
+        </button>
+        <button onclick="cerrarSesion()" aria-label="Cerrar sesión" style="background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; font-size: 13px; text-decoration: underline;">Salir</button>
+      </div>
     </header>
 
     <section class="total-card">
@@ -824,9 +838,42 @@
   const COLORES_CATEGORIA = ["#E64A19", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#b49a68", "#8b929d"];
   let chartsInstances = {};
 
+  // Auth
+  function verificarAutenticacion() {
+    const token = localStorage.getItem('jwt_token');
+    const loginScreen = document.getElementById('login-screen');
+    const appShell = document.querySelector('.app-shell');
+
+    if (!token) {
+      loginScreen.style.display = 'flex';
+      appShell.style.display = 'none';
+      return false;
+    } else {
+      loginScreen.style.display = 'none';
+      appShell.style.display = 'block';
+      return true;
+    }
+  }
+
+  function cerrarSesion() {
+    localStorage.removeItem('jwt_token');
+    location.href = '/';
+  }
+
+  function obtenerHeadersConAuth() {
+    const token = localStorage.getItem('jwt_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async function cargarDatos() {
     const endpoint = vistaActual === "todos" ? "/api/gastos/todos" : `/api/gastos/${vistaActual}`;
-    const res = await fetch(`${API}${endpoint}`);
+    const res = await fetch(`${API}${endpoint}`, {
+      headers: obtenerHeadersConAuth()
+    });
     if (!res.ok) throw new Error("No se pudieron cargar los gastos");
     const gastos = await res.json();
     gastosActuales = gastos.sort((a, b) => {
@@ -1323,8 +1370,11 @@
     });
   }
 
-  cargarDatos();
-  setInterval(cargarDatos, 60000);
+  // Verificar autenticación al cargar la página
+  if (verificarAutenticacion()) {
+    cargarDatos();
+    setInterval(cargarDatos, 60000);
+  }
   document.getElementById("modal-editar").onclick = (e) => {
     if (e.target.id === "modal-editar") cerrarModal();
   };
