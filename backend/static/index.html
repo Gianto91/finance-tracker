@@ -836,6 +836,7 @@
   }
 
   function renderTotales(gastos) {
+    if (!document.getElementById("total-valor")) return;
     const total = gastos.reduce((sum, g) => sum + g.monto, 0);
     document.getElementById("total-valor").textContent = `S/ ${total.toFixed(2)}`;
 
@@ -938,6 +939,8 @@
     const status = document.getElementById("chart-status");
     const summaryGrid = document.getElementById("summary-grid");
     const categoryList = document.getElementById("category-list");
+
+    if (!status || !summaryGrid || !categoryList) return;
 
     renderDailyChart(gastos);
 
@@ -1144,6 +1147,7 @@
 
   function renderListaInicio(gastos) {
     const cont = document.getElementById("lista-gastos-inicio");
+    if (!cont) return;
     if (!gastos.length) {
       cont.innerHTML = `<div class="empty">No hay gastos aún</div>`;
       return;
