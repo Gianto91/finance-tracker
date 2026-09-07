@@ -1,16 +1,14 @@
-.venv/
+backend/venv/
+.env
 __pycache__/
-*.py[cod]
-
-# Local credentials and tokens
-backend/credentials.json
-backend/token.json
-backend/.env
-
-# Local database
-backend/gastos.db
-
-# Editor and OS files
-.vscode/
+*.pyc
+*.db
 .DS_Store
-Thumbs.db
+gastos.db
+credentials.json
+token.pickle
+*.egg-info/
+.pytest_cache/
+.coverage
+dist/
+build/

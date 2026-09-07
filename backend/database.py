@@ -140,3 +140,56 @@ def todos_los_gastos():
     rows = conn.execute("SELECT * FROM gastos ORDER BY fecha DESC").fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None, metodo=None):
+    conn = get_connection()
+    campos = []
+    valores = []
+    if monto is not None:
+        campos.append("monto = ?")
+        valores.append(monto)
+    if comercio is not None:
+        campos.append("comercio = ?")
+        valores.append(comercio)
+    if categoria is not None:
+        campos.append("categoria = ?")
+        valores.append(categoria)
+    if metodo is not None:
+        campos.append("metodo = ?")
+        valores.append(metodo)
+    if campos:
+        valores.append(gasto_id)
+        query = f"UPDATE gastos SET {', '.join(campos)} WHERE id = ?"
+        conn.execute(query, valores)
+        conn.commit()
+    conn.close()
+
+
+def eliminar_gasto(gasto_id):
+    conn = get_connection()
+    conn.execute("DELETE FROM gastos WHERE id = ?", (gasto_id,))
+    conn.commit()
+    conn.close()
+
+
+def buscar_gastos(q="", categoria="", desde="", hasta=""):
+    conn = get_connection()
+    query = "SELECT * FROM gastos WHERE 1=1"
+    params = []
+    if q:
+        query += " AND lower(comercio) LIKE ?"
+        params.append(f"%{q.lower()}%")
+    if categoria:
+        query += " AND categoria = ?"
+        params.append(categoria)
+    if desde:
+        query += " AND fecha >= ?"
+        params.append(desde)
+    if hasta:
+        query += " AND fecha <= ?"
+        params.append(hasta)
+    query += " ORDER BY fecha DESC"
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

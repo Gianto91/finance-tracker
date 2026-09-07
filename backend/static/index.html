@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mis Gastos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <style>
   :root {
     --bg: #090909;
@@ -574,6 +575,23 @@
     line-height: 1;
   }
 
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  select {
+    color-scheme: dark;
+  }
+
+  select option {
+    background: #1a1a1a;
+    color: #f1f3f5;
+  }
+
   @media (max-width: 380px) {
     body { padding-inline: 12px; }
     .topbar h1 { font-size: 24px; }
@@ -588,6 +606,8 @@
 </head>
 <body>
   <div class="app-shell">
+    <!-- TAB: INICIO -->
+    <div id="tab-inicio" class="tab-content active">
     <header class="topbar">
       <h1 id="saludo">Hola, Gian</h1>
       <div class="bell" aria-label="Notificaciones">
@@ -633,58 +653,167 @@
 
     <div class="chart-card" id="category-card">
       <h2 class="chart-title">Gastos por categoría</h2>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div class="category-list" id="category-list"></div>
-      <div class="daily-chart" id="daily-chart"></div>
-      <div class="chart-status" id="chart-status"></div>
+      <div style="max-width: 250px; margin: 0 auto;">
+        <canvas id="chartPieInicio" style="max-height: 200px;"></canvas>
+      </div>
     </div>
 
     <div class="section-heading">
-      <h2>Movimientos</h2>
+      <h2>Últimos Movimientos</h2>
     </div>
-    <div class="list-card" id="lista-gastos">
+
+    <div class="list-card" id="lista-gastos-inicio">
       <div class="empty">Cargando...</div>
+    </div>
+    </div><!-- FIN TAB INICIO -->
+
+    <!-- TAB: ESTADÍSTICAS -->
+    <div id="tab-estadisticas" class="tab-content">
+      <header class="topbar">
+        <h1 id="saludo">Estadísticas</h1>
+      </header>
+
+      <div class="chart-card">
+        <h2 class="chart-title">Gastos por Categoría</h2>
+        <div style="margin-top: 18px;">
+          <canvas id="chartPie" style="max-width: 100%; max-height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top: 18px;">
+        <h2 class="chart-title">Gastos por Categoría (Barras)</h2>
+        <div style="margin-top: 18px;">
+          <canvas id="chartBar" style="max-width: 100%; max-height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top: 18px;">
+        <h2 class="chart-title">Tendencia (Últimos 30 días)</h2>
+        <div style="margin-top: 18px;">
+          <canvas id="chartLine" style="max-width: 100%; max-height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top: 18px;">
+        <div class="stat-card">
+          <div class="stat-label">Total Gastos</div>
+          <div class="stat-value" id="stat-total">S/ 0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Promedio</div>
+          <div class="stat-value" id="stat-promedio">S/ 0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Máximo</div>
+          <div class="stat-value" id="stat-maximo">S/ 0.00</div>
+        </div>
+      </div>
+    </div><!-- FIN TAB ESTADÍSTICAS -->
+
+    <!-- TAB: MOVIMIENTOS -->
+    <div id="tab-movimientos" class="tab-content">
+      <header class="topbar">
+        <h1>Movimientos</h1>
+      </header>
+
+      <div style="display: flex; gap: 10px; margin: 18px 0 12px; flex-wrap: wrap;">
+        <input type="text" id="buscar-gasto" placeholder="Buscar comercio..." style="flex: 1; min-width: 180px; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: var(--text); font-size: 13px;" onkeyup="filtrarGastos()">
+        <select id="filtro-categoria" style="padding: 10px 12px; background: #1a1a1a; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: var(--text); font-size: 13px;" onchange="filtrarGastos()">
+          <option value="">Todas las categorías</option>
+          <option value="Comida">Comida</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Hogar">Hogar</option>
+          <option value="Salud">Salud</option>
+          <option value="Entretenimiento">Entretenimiento</option>
+          <option value="Suscripciones">Suscripciones</option>
+          <option value="Impuestos">Impuestos</option>
+          <option value="Finanzas">Finanzas</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+
+      <div class="list-card" id="lista-gastos">
+        <div class="empty">Cargando...</div>
+      </div>
+    </div><!-- FIN TAB MOVIMIENTOS -->
+
+    <!-- TAB: PERFIL -->
+    <div id="tab-perfil" class="tab-content">
+      <header class="topbar">
+        <h1>Perfil</h1>
+      </header>
+      <div style="padding: 20px; text-align: center; color: var(--muted);">
+        <p>Sección en desarrollo</p>
+      </div>
+    </div><!-- FIN TAB PERFIL -->
+  </div>
+
+  <div id="modal-editar" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; padding:20px;">
+    <div style="background:#1a1a1a; border-radius:20px; padding:20px; max-width:400px; margin:50px auto; border:1px solid rgba(255,255,255,.08);">
+      <h3 style="margin:0 0 20px; font-size:18px;">Editar Gasto</h3>
+      <input type="hidden" id="editar-id">
+      <div style="margin-bottom:15px;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:5px;">Comercio</label>
+        <input type="text" id="editar-comercio" style="width:100%; padding:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text);">
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:5px;">Monto</label>
+        <input type="number" id="editar-monto" step="0.01" style="width:100%; padding:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text);">
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:5px;">Categoría</label>
+        <select id="editar-categoria" style="width:100%; padding:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text);">
+          <option>Comida</option><option>Transporte</option><option>Servicios</option><option>Hogar</option><option>Salud</option><option>Entretenimiento</option><option>Suscripciones</option><option>Impuestos</option><option>Finanzas</option><option>Otros</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="cerrarModal()" style="flex:1; padding:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text); cursor:pointer;">Cancelar</button>
+        <button onclick="guardarEdicion()" style="flex:1; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600;">Guardar</button>
+      </div>
     </div>
   </div>
 
   <nav class="footer-nav" aria-label="Navegación principal">
-    <a class="nav-item active" href="#">
+    <button class="nav-item active" onclick="cambiarTab('inicio')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg>
       </span>
       <span>Inicio</span>
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-item" onclick="cambiarTab('movimientos')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
       </span>
       <span>Movimientos</span>
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-item" onclick="cambiarTab('estadisticas')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 20V8"/><path d="M7 20V4"/><path d="M11 20v-9"/><path d="M15 20V6"/><path d="M19 20v-7"/></svg>
       </span>
       <span>Estadísticas</span>
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-item" onclick="cambiarTab('perfil')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
       </span>
       <span>Perfil</span>
-    </a>
+    </button>
   </nav>
 
 <script>
-  const API = ""; // mismo origen, FastAPI sirve esto también
+  const API = "";
   let vistaActual = "semana";
   let gastosActuales = [];
   let paginaActual = 1;
   const GASTOS_POR_PAGINA = 10;
   const CATEGORIAS = ["Comida", "Transporte", "Servicios", "Hogar", "Salud", "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Otros"];
   const COLORES_CATEGORIA = ["#34d399", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#b49a68", "#8b929d"];
+  let chartsInstances = {};
 
   async function cargarDatos() {
-    const res = await fetch(`${API}/api/gastos/${vistaActual}`);
+    const endpoint = vistaActual === "todos" ? "/api/gastos/todos" : `/api/gastos/${vistaActual}`;
+    const res = await fetch(`${API}${endpoint}`);
     if (!res.ok) throw new Error("No se pudieron cargar los gastos");
     const gastos = await res.json();
     gastosActuales = gastos.sort((a, b) => {
@@ -693,8 +822,11 @@
     });
     paginaActual = 1;
     renderTotales(gastosActuales);
+    renderListaInicio(gastosActuales.slice(0, 5));
+    renderPieInico(gastosActuales);
     renderLista();
     renderChart(gastosActuales);
+    renderGraficos(gastosActuales);
   }
 
   function renderTotales(gastos) {
@@ -757,7 +889,7 @@
   }
 
   function renderLista() {
-    const cont = document.getElementById("lista-gastos");
+    const cont = document.getElementById("lista-gastos-mov") || document.getElementById("lista-gastos");
     if (!gastosActuales.length) {
       cont.innerHTML = `<div class="empty">Todavía no hay gastos registrados en este período.</div>`;
       return;
@@ -766,8 +898,8 @@
     const gastosPagina = gastosActuales.slice(inicio, inicio + GASTOS_POR_PAGINA);
     const paginas = Math.ceil(gastosActuales.length / GASTOS_POR_PAGINA);
     cont.innerHTML = gastosPagina.map(g => `
-      <div class="gasto-row">
-        <div class="gasto-main">
+      <div class="gasto-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div class="gasto-main" style="flex:1;">
           <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
           <div class="gasto-info">
             <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
@@ -775,7 +907,11 @@
             <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
           </div>
         </div>
-        <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
+          <button onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')" style="padding:6px 8px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:6px; color:var(--accent); cursor:pointer; font-size:11px; font-weight:600;">✏️</button>
+          <button onclick="eliminarGasto(${g.id})" style="padding:6px 8px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); border-radius:6px; color:var(--danger); cursor:pointer; font-size:11px; font-weight:600;">🗑️</button>
+        </div>
       </div>
     `).join("") + `
       <div class="pagination">
@@ -916,8 +1052,236 @@
     }
   }
 
+  function abrirModal(id, comercio, monto, categoria) {
+    document.getElementById("editar-id").value = id;
+    document.getElementById("editar-comercio").value = comercio;
+    document.getElementById("editar-monto").value = monto;
+    document.getElementById("editar-categoria").value = categoria;
+    document.getElementById("modal-editar").style.display = "block";
+  }
+
+  function cerrarModal() {
+    document.getElementById("modal-editar").style.display = "none";
+  }
+
+  async function guardarEdicion() {
+    const id = document.getElementById("editar-id").value;
+    const comercio = document.getElementById("editar-comercio").value;
+    const monto = parseFloat(document.getElementById("editar-monto").value);
+    const categoria = document.getElementById("editar-categoria").value;
+
+    try {
+      const res = await fetch(`${API}/api/gastos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monto, comercio, categoria })
+      });
+      if (!res.ok) throw new Error("No se pudo editar");
+      cerrarModal();
+      cargarDatos();
+    } catch (error) {
+      alert("Error al editar: " + error.message);
+    }
+  }
+
+  async function eliminarGasto(id) {
+    if (!confirm("¿Eliminar este gasto?")) return;
+    try {
+      const res = await fetch(`${API}/api/gastos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("No se pudo eliminar");
+      cargarDatos();
+    } catch (error) {
+      alert("Error al eliminar: " + error.message);
+    }
+  }
+
+  function filtrarGastos() {
+    const busquedaEl = document.getElementById("buscar-gasto-mov") || document.getElementById("buscar-gasto");
+    const categoriaEl = document.getElementById("filtro-categoria-mov") || document.getElementById("filtro-categoria");
+    const busqueda = busquedaEl ? busquedaEl.value.toLowerCase() : "";
+    const categoria = categoriaEl ? categoriaEl.value : "";
+
+    fetch(`${API}/api/gastos/buscar?q=${busqueda}&categoria=${categoria}`)
+      .then(r => r.json())
+      .then(gastos => {
+        gastosActuales = gastos.sort((a, b) => {
+          const diferenciaFecha = new Date(b.fecha) - new Date(a.fecha);
+          return diferenciaFecha || b.id - a.id;
+        });
+        paginaActual = 1;
+        renderLista();
+      })
+      .catch(error => console.error("Error en búsqueda:", error));
+  }
+
+  function renderListaInicio(gastos) {
+    const cont = document.getElementById("lista-gastos-inicio");
+    if (!gastos.length) {
+      cont.innerHTML = `<div class="empty">No hay gastos aún</div>`;
+      return;
+    }
+    cont.innerHTML = gastos.map(g => `
+      <div class="gasto-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div class="gasto-main" style="flex:1;">
+          <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
+          <div class="gasto-info">
+            <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
+            <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
+            <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
+          <button onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')" style="padding:6px 8px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:6px; color:var(--accent); cursor:pointer; font-size:11px; font-weight:600;">✏️</button>
+          <button onclick="eliminarGasto(${g.id})" style="padding:6px 8px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); border-radius:6px; color:var(--danger); cursor:pointer; font-size:11px; font-weight:600;">🗑️</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderPieInico(gastos) {
+    const porCategoria = {};
+    gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
+
+    const labels = Object.keys(porCategoria);
+    const datos = Object.values(porCategoria);
+    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+
+    const ctx = document.getElementById("chartPieInicio");
+    if (!ctx) return;
+    if (chartsInstances.pieInicio) chartsInstances.pieInicio.destroy();
+    chartsInstances.pieInicio = new Chart(ctx, {
+      type: "doughnut",
+      data: { labels, datasets: [{ data: datos, backgroundColor: colores }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#f1f3f5", padding: 15, font: { size: 12 } }
+          }
+        }
+      }
+    });
+  }
+
+  function cambiarTab(tab) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    event.target.closest(".nav-item").classList.add("active");
+    if (tab === "estadisticas") {
+      setTimeout(() => actualizarGraficos(), 100);
+    }
+    if (tab === "movimientos") {
+      vistaActual = "todos";
+      cargarDatos();
+    }
+  }
+
+  function renderGraficos(gastos) {
+    const porCategoria = {};
+    gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
+
+    const labels = Object.keys(porCategoria);
+    const datos = Object.values(porCategoria);
+    const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+
+    document.getElementById("stat-total").textContent = `S/ ${datos.reduce((a,b)=>a+b, 0).toFixed(2)}`;
+    document.getElementById("stat-promedio").textContent = `S/ ${(datos.reduce((a,b)=>a+b, 0) / Math.max(1, gastos.length)).toFixed(2)}`;
+    document.getElementById("stat-maximo").textContent = `S/ ${Math.max(...datos, 0).toFixed(2)}`;
+  }
+
+  function actualizarGraficos() {
+    fetch(`${API}/api/gastos/todos`)
+      .then(r => r.json())
+      .then(gastos => {
+        const porCategoria = {};
+        gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
+
+        const labels = Object.keys(porCategoria);
+        const datos = Object.values(porCategoria);
+        const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#34d399");
+
+        dibujarGraficoPie(labels, datos, colores);
+        dibujarGraficoBar(labels, datos, colores);
+        dibujarGraficoLinea(gastos);
+      });
+  }
+
+  function dibujarGraficoPie(labels, datos, colores) {
+    const ctx = document.getElementById("chartPie");
+    if (!ctx) return;
+    if (chartsInstances.pie) chartsInstances.pie.destroy();
+    chartsInstances.pie = new Chart(ctx, {
+      type: "doughnut",
+      data: { labels, datasets: [{ data: datos, backgroundColor: colores }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: "#f1f3f5" } } } }
+    });
+  }
+
+  function dibujarGraficoBar(labels, datos, colores) {
+    const ctx = document.getElementById("chartBar");
+    if (!ctx) return;
+    if (chartsInstances.bar) chartsInstances.bar.destroy();
+    chartsInstances.bar = new Chart(ctx, {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Monto (S/)", data: datos, backgroundColor: colores }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: "#f1f3f5" } } }, scales: { y: { ticks: { color: "#f1f3f5" } }, x: { ticks: { color: "#f1f3f5" } } } }
+    });
+  }
+
+  function dibujarGraficoLinea(gastos) {
+    const ctx = document.getElementById("chartLine");
+    if (!ctx) return;
+
+    const grupos = {};
+    gastos.forEach(g => {
+      const fecha = new Date(g.fecha);
+      if (Number.isNaN(fecha.getTime())) return;
+      const clave = claveFecha(fecha);
+      grupos[clave] = (grupos[clave] || 0) + g.monto;
+    });
+
+    const ahora = new Date();
+    const hace30 = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const dias = [];
+    for (let d = new Date(hace30); d <= ahora; d.setDate(d.getDate() + 1)) {
+      dias.push(new Date(d));
+    }
+
+    const labels = dias.map(d => d.getDate());
+    const datos = dias.map(d => grupos[claveFecha(d)] || 0);
+
+    if (chartsInstances.line) chartsInstances.line.destroy();
+    chartsInstances.line = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Gasto diario",
+          data: datos,
+          borderColor: "#34d399",
+          backgroundColor: "rgba(52, 211, 153, 0.1)",
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { labels: { color: "#f1f3f5" } } },
+        scales: { y: { ticks: { color: "#f1f3f5" } }, x: { ticks: { color: "#f1f3f5" } } }
+      }
+    });
+  }
+
   cargarDatos();
   setInterval(cargarDatos, 60000);
+  document.getElementById("modal-editar").onclick = (e) => {
+    if (e.target.id === "modal-editar") cerrarModal();
+  };
 </script>
 </body>
 </html>

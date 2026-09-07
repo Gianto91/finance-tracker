@@ -146,5 +146,40 @@ def revisar_ahora():
     return {"status": "ok"}
 
 
+@app.post("/api/gastos/crear")
+def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: str = "Otro"):
+    """Crea un gasto manualmente (útil en modo demo sin Gmail)."""
+    database.guardar_gasto(
+        fecha=datetime.now().isoformat(),
+        monto=monto,
+        comercio=comercio,
+        categoria=categoria,
+        metodo=metodo,
+        email_id=f"manual-{datetime.now().timestamp()}"
+    )
+    return {"status": "ok", "monto": monto, "comercio": comercio}
+
+
+@app.put("/api/gastos/{gasto_id}")
+def editar_gasto(gasto_id: int, monto: float = None, comercio: str = None,
+                  categoria: str = None, metodo: str = None):
+    """Edita un gasto existente."""
+    database.actualizar_gasto_por_id(gasto_id, monto, comercio, categoria, metodo)
+    return {"status": "ok", "gasto_id": gasto_id}
+
+
+@app.delete("/api/gastos/{gasto_id}")
+def eliminar_gasto(gasto_id: int):
+    """Elimina un gasto."""
+    database.eliminar_gasto(gasto_id)
+    return {"status": "ok", "gasto_id": gasto_id}
+
+
+@app.get("/api/gastos/buscar")
+def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str = ""):
+    """Busca y filtra gastos por comercio, categoría y rango de fechas."""
+    return database.buscar_gastos(q, categoria, desde, hasta)
+
+
 # Sirve el dashboard (index.html) en la raíz
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

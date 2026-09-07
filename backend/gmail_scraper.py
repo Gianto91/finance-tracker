@@ -39,6 +39,8 @@ def _query_hoy():
 
 
 def _get_service():
+    if not CREDENTIALS_PATH.exists():
+        return None
     creds = None
     if TOKEN_PATH.exists():
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
@@ -115,6 +117,9 @@ def obtener_correos_nuevos(ya_procesados_fn):
     ya_procesados_fn: función que recibe un email_id y devuelve True/False
     """
     service = _get_service()
+    if not service:
+        print("⚠️  credentials.json no configurado. Modo demo: sin scraping de Gmail")
+        return []
     query = _query_hoy()
     resultado = service.users().messages().list(userId="me", q=query).execute()
     mensajes = resultado.get("messages", [])
@@ -152,6 +157,8 @@ def obtener_correos_por_ids(ids):
         return []
 
     service = _get_service()
+    if not service:
+        return []
     correos = []
     for email_id in ids:
         msg = service.users().messages().get(
