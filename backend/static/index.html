@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Mis Gastos</title>
+<title>Hormiguita - Gestión de Gastos</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐜</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <style>
   :root {
@@ -609,7 +610,13 @@
     <!-- TAB: INICIO -->
     <div id="tab-inicio" class="tab-content active">
     <header class="topbar">
-      <h1 id="saludo">Hola, Gian</h1>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 28px;">🐜</span>
+        <div>
+          <div style="font-size: 12px; color: var(--text-soft); margin-bottom: 2px;">Hormiguita</div>
+          <h1 id="saludo" style="margin: 0;">Hola, Gian</h1>
+        </div>
+      </div>
       <div class="bell" aria-label="Notificaciones">
         <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
       </div>

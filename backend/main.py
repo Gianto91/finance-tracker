@@ -15,7 +15,7 @@ import telegram_notifier
 
 load_dotenv()
 
-app = FastAPI(title="Mis Gastos")
+app = FastAPI(title="Hormiguita - Gestión de Gastos")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
