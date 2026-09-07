@@ -1183,7 +1183,10 @@
   async function eliminarGasto(id) {
     if (!confirm("¿Eliminar este gasto?")) return;
     try {
-      const res = await fetch(`${API}/api/gastos/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API}/api/gastos/${id}`, {
+        method: "DELETE",
+        headers: obtenerHeadersConAuth()
+      });
       if (!res.ok) throw new Error("No se pudo eliminar");
       cargarDatos();
     } catch (error) {
