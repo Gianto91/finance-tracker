@@ -4,14 +4,16 @@ from email.utils import parsedate_to_datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Cookie, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 import database
 import email_parser
 import gmail_scraper
 import telegram_notifier
+import auth
 
 load_dotenv()
 
@@ -201,6 +203,59 @@ def borrar_todos():
 def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str = ""):
     """Busca y filtra gastos por comercio, categoría y rango de fechas."""
     return database.buscar_gastos(q, categoria, desde, hasta)
+
+
+@app.get("/api/auth/login")
+def auth_login():
+    """Redirige a Google OAuth para que el usuario se autentique."""
+    client_id = auth.GOOGLE_CLIENT_ID
+    redirect_uri = auth.GOOGLE_REDIRECT_URI
+    scope = "openid%20profile%20email"
+
+    if not client_id:
+        return {"error": "GOOGLE_CLIENT_ID no configurado"}
+
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={client_id}&"
+        f"redirect_uri={redirect_uri}&"
+        f"response_type=code&"
+        f"scope={scope}"
+    )
+    return RedirectResponse(url=google_auth_url)
+
+
+@app.get("/api/auth/callback")
+def auth_callback(code: str):
+    """Callback de Google OAuth. Intercambia el código por un JWT token."""
+    result = auth.handle_oauth_callback(code)
+    if not result:
+        return {"error": "Error durante la autenticación"}
+
+    user_id, jwt_token = result
+
+    # Retornar HTML que guarda el token en localStorage y redirige al dashboard
+    html = f"""
+    <html>
+        <head>
+            <title>Autenticando...</title>
+        </head>
+        <body>
+            <script>
+                localStorage.setItem('jwt_token', '{jwt_token}');
+                window.location.href = '/';
+            </script>
+        </body>
+    </html>
+    """
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html)
+
+
+@app.post("/api/auth/logout")
+def auth_logout():
+    """Logout: el cliente elimina el JWT token."""
+    return {"status": "ok", "message": "Sesión cerrada. Elimina el token del cliente."}
 
 
 # Sirve el dashboard (index.html) en la raíz

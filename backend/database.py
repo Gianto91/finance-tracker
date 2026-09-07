@@ -3,6 +3,7 @@ Capa de datos. Usa SQLite (un solo archivo, cero configuración,
 perfecto para un proyecto personal que corre en tu propia laptop).
 """
 import sqlite3
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -18,56 +19,84 @@ def get_connection():
 def init_db():
     conn = get_connection()
     conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            google_id TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            nombre TEXT,
+            google_token TEXT,
+            creado_en TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS gastos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
             fecha TEXT NOT NULL,
             monto REAL NOT NULL,
             comercio TEXT,
             categoria TEXT DEFAULT 'Otros',
             metodo TEXT,
-            email_id TEXT UNIQUE,
+            email_id TEXT,
             creado_en TEXT NOT NULL,
-            estado TEXT DEFAULT 'activo'
+            estado TEXT DEFAULT 'activo',
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            UNIQUE (user_id, email_id)
         )
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS emails_ignorados (
-            email_id TEXT PRIMARY KEY,
-            eliminado_en TEXT NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            email_id TEXT NOT NULL,
+            eliminado_en TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            UNIQUE (user_id, email_id)
         )
     """)
-    # Agregar columna estado si no existe (para tablas existentes)
+    # Migraciones para tablas existentes
     try:
         conn.execute("ALTER TABLE gastos ADD COLUMN estado TEXT DEFAULT 'activo'")
         conn.commit()
     except:
         pass
+    try:
+        conn.execute("ALTER TABLE gastos ADD COLUMN user_id TEXT DEFAULT 'legacy-user'")
+        conn.commit()
+    except:
+        pass
+    try:
+        conn.execute("ALTER TABLE emails_ignorados ADD COLUMN user_id TEXT DEFAULT 'legacy-user'")
+        conn.commit()
+    except:
+        pass
     conn.close()
+    _migrate_legacy_data()
 
 
-def gasto_ya_existe(email_id: str) -> bool:
+def gasto_ya_existe(email_id: str, user_id: str = "legacy-user") -> bool:
     conn = get_connection()
     # Verificar si está en la tabla de ignorados (emails que el usuario eliminó)
     row_ignorado = conn.execute(
-        "SELECT 1 FROM emails_ignorados WHERE email_id = ?", (email_id,)
+        "SELECT 1 FROM emails_ignorados WHERE email_id = ? AND user_id = ?", (email_id, user_id)
     ).fetchone()
     if row_ignorado:
         conn.close()
         return True
     # Verificar si ya existe en gastos (activo o eliminado)
     row = conn.execute(
-        "SELECT 1 FROM gastos WHERE email_id = ? AND (estado = 'activo' OR estado = 'eliminado')", (email_id,)
+        "SELECT 1 FROM gastos WHERE email_id = ? AND user_id = ? AND (estado = 'activo' OR estado = 'eliminado')", (email_id, user_id)
     ).fetchone()
     conn.close()
     return row is not None
 
 
-def guardar_gasto(fecha, monto, comercio, categoria, metodo, email_id):
+def guardar_gasto(fecha, monto, comercio, categoria, metodo, email_id, user_id: str = "legacy-user"):
     conn = get_connection()
     conn.execute(
-        """INSERT INTO gastos (fecha, monto, comercio, categoria, metodo, email_id, creado_en)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (fecha, monto, comercio, categoria, metodo, email_id, datetime.now().isoformat()),
+        """INSERT INTO gastos (user_id, fecha, monto, comercio, categoria, metodo, email_id, creado_en)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, fecha, monto, comercio, categoria, metodo, email_id, datetime.now().isoformat()),
     )
     conn.commit()
     conn.close()
@@ -130,34 +159,34 @@ def normalizar_categorias_existentes():
     conn.close()
 
 
-def resumen_semana():
+def resumen_semana(user_id: str = "legacy-user"):
     conn = get_connection()
     ahora = datetime.now()
     desde = (ahora - timedelta(days=ahora.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
     rows = conn.execute(
-        "SELECT * FROM gastos WHERE fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (desde,)
+        "SELECT * FROM gastos WHERE user_id = ? AND fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (user_id, desde)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def resumen_mes():
+def resumen_mes(user_id: str = "legacy-user"):
     conn = get_connection()
     desde = datetime.now().replace(
         day=1, hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
     rows = conn.execute(
-        "SELECT * FROM gastos WHERE fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (desde,)
+        "SELECT * FROM gastos WHERE user_id = ? AND fecha >= ? AND estado = 'activo' ORDER BY fecha DESC", (user_id, desde)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def todos_los_gastos():
+def todos_los_gastos(user_id: str = "legacy-user"):
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM gastos WHERE estado = 'activo' ORDER BY fecha DESC").fetchall()
+    rows = conn.execute("SELECT * FROM gastos WHERE user_id = ? AND estado = 'activo' ORDER BY fecha DESC", (user_id,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -186,13 +215,13 @@ def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None,
     conn.close()
 
 
-def marcar_email_ignorado(email_id):
-    """Marca un email para que NUNCA sea scrappeado de nuevo."""
+def marcar_email_ignorado(email_id, user_id: str = "legacy-user"):
+    """Marca un email para que NUNCA sea scrappeado de nuevo (por usuario)."""
     conn = get_connection()
     try:
         conn.execute(
-            "INSERT INTO emails_ignorados (email_id, eliminado_en) VALUES (?, ?)",
-            (email_id, datetime.now().isoformat())
+            "INSERT INTO emails_ignorados (user_id, email_id, eliminado_en) VALUES (?, ?, ?)",
+            (user_id, email_id, datetime.now().isoformat())
         )
         conn.commit()
     except sqlite3.IntegrityError:
@@ -200,23 +229,91 @@ def marcar_email_ignorado(email_id):
     conn.close()
 
 
-def eliminar_gasto(gasto_id):
+def eliminar_gasto(gasto_id, user_id: str = "legacy-user"):
     conn = get_connection()
     # Obtener el email_id del gasto antes de eliminarlo
-    row = conn.execute("SELECT email_id FROM gastos WHERE id = ?", (gasto_id,)).fetchone()
+    row = conn.execute("SELECT email_id FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, user_id)).fetchone()
     # Marcar como eliminado
-    conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ?", (gasto_id,))
+    conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ? AND user_id = ?", (gasto_id, user_id))
     conn.commit()
     conn.close()
     # Si tiene email_id, marcar ese email como ignorado
     if row and row["email_id"]:
-        marcar_email_ignorado(row["email_id"])
+        marcar_email_ignorado(row["email_id"], user_id)
 
 
-def buscar_gastos(q="", categoria="", desde="", hasta=""):
+def _migrate_legacy_data():
+    """Si hay gastos sin user_id, crea usuario legacy y asigna los datos."""
+    conn = get_connection()
+    legacy_count = conn.execute(
+        "SELECT COUNT(*) as cnt FROM gastos WHERE user_id = 'legacy-user'"
+    ).fetchone()["cnt"]
+
+    if legacy_count == 0:
+        conn.close()
+        return
+
+    # Crear usuario legacy si no existe
+    try:
+        legacy_id = "legacy-user"
+        conn.execute(
+            """INSERT INTO users (id, google_id, email, nombre, creado_en)
+               VALUES (?, ?, ?, ?, ?)""",
+            (legacy_id, "legacy", "legacy@local", "Legacy User", datetime.now().isoformat())
+        )
+        conn.commit()
+        print(f"✅ Usuario legacy creado con {legacy_count} gastos")
+    except sqlite3.IntegrityError:
+        pass
+    conn.close()
+
+
+def get_or_create_user(google_id: str, email: str, nombre: str) -> dict:
+    """Obtiene o crea un usuario basado en google_id."""
+    conn = get_connection()
+    user = conn.execute(
+        "SELECT * FROM users WHERE google_id = ?", (google_id,)
+    ).fetchone()
+
+    if user:
+        conn.close()
+        return dict(user)
+
+    user_id = str(uuid.uuid4())
+    conn.execute(
+        """INSERT INTO users (id, google_id, email, nombre, creado_en)
+           VALUES (?, ?, ?, ?, ?)""",
+        (user_id, google_id, email, nombre, datetime.now().isoformat())
+    )
+    conn.commit()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(user)
+
+
+def update_user_token(user_id: str, token_json: str):
+    """Actualiza el token de Google OAuth del usuario."""
+    conn = get_connection()
+    conn.execute("UPDATE users SET google_token = ? WHERE id = ?", (token_json, user_id))
+    conn.commit()
+    conn.close()
+
+
+def get_user(user_id: str):
+    """Obtiene un usuario por su ID."""
+    conn = get_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+
+def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):
     conn = get_connection()
     query = "SELECT * FROM gastos WHERE estado = 'activo'"
     params = []
+    if user_id:
+        query += " AND user_id = ?"
+        params.append(user_id)
     if q:
         query += " AND lower(comercio) LIKE ?"
         params.append(f"%{q.lower()}%")
