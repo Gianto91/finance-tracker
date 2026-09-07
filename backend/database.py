@@ -42,7 +42,7 @@ def init_db():
 def gasto_ya_existe(email_id: str) -> bool:
     conn = get_connection()
     row = conn.execute(
-        "SELECT 1 FROM gastos WHERE email_id = ?", (email_id,)
+        "SELECT 1 FROM gastos WHERE email_id = ? AND (estado = 'activo' OR estado = 'eliminado')", (email_id,)
     ).fetchone()
     conn.close()
     return row is not None
