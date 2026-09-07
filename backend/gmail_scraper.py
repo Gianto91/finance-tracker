@@ -7,6 +7,7 @@ autorices el acceso (login con Google). Luego guarda un token local
 (token.json) para no pedirte login cada vez.
 """
 import base64
+import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -46,7 +47,7 @@ def _get_service():
     token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
     if token_json_env:
         creds = Credentials.from_authorized_user_info(
-            eval(token_json_env), SCOPES
+            json.loads(token_json_env), SCOPES
         )
     elif TOKEN_PATH.exists():
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
