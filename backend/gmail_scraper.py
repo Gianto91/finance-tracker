@@ -42,7 +42,10 @@ def _query_hoy():
 def _get_service():
     creds = None
 
+    print(f"DEBUG: Variables de entorno disponibles: {list(os.environ.keys())[:10]}")
     token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
+    print(f"DEBUG: token_json_env = {str(token_json_env)[:50] if token_json_env else 'None'}")
+
     if token_json_env:
         try:
             print("📌 Leyendo token desde variable de entorno...")
