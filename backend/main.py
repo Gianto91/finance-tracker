@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Cookie, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 
 import database
 import email_parser
@@ -248,7 +248,6 @@ def auth_callback(code: str):
         </body>
     </html>
     """
-    from fastapi.responses import HTMLResponse
     return HTMLResponse(content=html)
 
 
