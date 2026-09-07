@@ -30,6 +30,12 @@ def init_db():
             estado TEXT DEFAULT 'activo'
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS emails_ignorados (
+            email_id TEXT PRIMARY KEY,
+            eliminado_en TEXT NOT NULL
+        )
+    """)
     # Agregar columna estado si no existe (para tablas existentes)
     try:
         conn.execute("ALTER TABLE gastos ADD COLUMN estado TEXT DEFAULT 'activo'")
@@ -41,6 +47,14 @@ def init_db():
 
 def gasto_ya_existe(email_id: str) -> bool:
     conn = get_connection()
+    # Verificar si está en la tabla de ignorados (emails que el usuario eliminó)
+    row_ignorado = conn.execute(
+        "SELECT 1 FROM emails_ignorados WHERE email_id = ?", (email_id,)
+    ).fetchone()
+    if row_ignorado:
+        conn.close()
+        return True
+    # Verificar si ya existe en gastos (activo o eliminado)
     row = conn.execute(
         "SELECT 1 FROM gastos WHERE email_id = ? AND (estado = 'activo' OR estado = 'eliminado')", (email_id,)
     ).fetchone()
@@ -172,11 +186,31 @@ def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None,
     conn.close()
 
 
+def marcar_email_ignorado(email_id):
+    """Marca un email para que NUNCA sea scrappeado de nuevo."""
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT INTO emails_ignorados (email_id, eliminado_en) VALUES (?, ?)",
+            (email_id, datetime.now().isoformat())
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        pass
+    conn.close()
+
+
 def eliminar_gasto(gasto_id):
     conn = get_connection()
+    # Obtener el email_id del gasto antes de eliminarlo
+    row = conn.execute("SELECT email_id FROM gastos WHERE id = ?", (gasto_id,)).fetchone()
+    # Marcar como eliminado
     conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ?", (gasto_id,))
     conn.commit()
     conn.close()
+    # Si tiene email_id, marcar ese email como ignorado
+    if row and row["email_id"]:
+        marcar_email_ignorado(row["email_id"])
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta=""):
