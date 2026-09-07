@@ -240,10 +240,19 @@ def eliminar_gasto(gasto_id, user_id: str = "legacy-user"):
     conn = get_connection()
     # Obtener el email_id del gasto antes de eliminarlo
     row = conn.execute("SELECT email_id FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, user_id)).fetchone()
+
+    if not row:
+        print(f"⚠️ Gasto {gasto_id} no encontrado para user_id={user_id}")
+        conn.close()
+        return
+
     # Marcar como eliminado
-    conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ? AND user_id = ?", (gasto_id, user_id))
+    cursor = conn.execute("UPDATE gastos SET estado = 'eliminado' WHERE id = ? AND user_id = ?", (gasto_id, user_id))
     conn.commit()
+    affected = cursor.rowcount
+    print(f"✅ Gasto {gasto_id} eliminado ({affected} rows)")
     conn.close()
+
     # Si tiene email_id, marcar ese email como ignorado
     if row and row["email_id"]:
         marcar_email_ignorado(row["email_id"], user_id)
