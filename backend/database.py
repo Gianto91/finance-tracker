@@ -18,6 +18,8 @@ def get_connection():
 
 def init_db():
     conn = get_connection()
+
+    # Crear tabla users
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
@@ -28,10 +30,13 @@ def init_db():
             creado_en TEXT NOT NULL
         )
     """)
+    conn.commit()
+
+    # Crear tabla gastos con estructura new
     conn.execute("""
         CREATE TABLE IF NOT EXISTS gastos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
+            user_id TEXT,
             fecha TEXT NOT NULL,
             monto REAL NOT NULL,
             comercio TEXT,
@@ -39,21 +44,22 @@ def init_db():
             metodo TEXT,
             email_id TEXT,
             creado_en TEXT NOT NULL,
-            estado TEXT DEFAULT 'activo',
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            UNIQUE (user_id, email_id)
+            estado TEXT DEFAULT 'activo'
         )
     """)
+    conn.commit()
+
+    # Crear tabla emails_ignorados con estructura new
     conn.execute("""
         CREATE TABLE IF NOT EXISTS emails_ignorados (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
-            email_id TEXT NOT NULL,
+            email_id TEXT,
+            user_id TEXT,
             eliminado_en TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            UNIQUE (user_id, email_id)
+            PRIMARY KEY (user_id, email_id)
         )
     """)
+    conn.commit()
+
     # Migraciones para tablas existentes
     try:
         conn.execute("ALTER TABLE gastos ADD COLUMN estado TEXT DEFAULT 'activo'")
@@ -70,6 +76,7 @@ def init_db():
         conn.commit()
     except:
         pass
+
     conn.close()
     _migrate_legacy_data()
 
