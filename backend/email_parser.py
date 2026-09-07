@@ -226,7 +226,7 @@ def _detectar_fecha(texto: str):
             re.IGNORECASE,
         ),
         re.compile(
-            r"(\d{1,2})\s+([a-z]{3,})[,]?\s+(\d{4})\s+"
+            r"(\d{1,2})\s+([a-z]{3,})[,]?\s+(\d{4})\s*(?:\s+|[\n\r]+)"
             r"(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)",
             re.IGNORECASE,
         ),
