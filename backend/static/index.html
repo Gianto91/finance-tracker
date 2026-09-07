@@ -714,6 +714,7 @@
     <div id="tab-movimientos" class="tab-content">
       <header class="topbar">
         <h1>Movimientos</h1>
+        <button onclick="abrirModalCrear()" style="padding:8px 14px; background:var(--accent); border:none; border-radius:10px; color:#000; font-weight:600; cursor:pointer; font-size:13px;">+ Nuevo</button>
       </header>
 
       <div style="display: flex; gap: 10px; margin: 18px 0 12px; flex-wrap: wrap;">
@@ -1052,6 +1053,14 @@
     }
   }
 
+  function abrirModalCrear() {
+    document.getElementById("editar-id").value = "";
+    document.getElementById("editar-comercio").value = "";
+    document.getElementById("editar-monto").value = "";
+    document.getElementById("editar-categoria").value = "Otros";
+    document.getElementById("modal-editar").style.display = "block";
+  }
+
   function abrirModal(id, comercio, monto, categoria) {
     document.getElementById("editar-id").value = id;
     document.getElementById("editar-comercio").value = comercio;
@@ -1069,18 +1078,31 @@
     const comercio = document.getElementById("editar-comercio").value;
     const monto = parseFloat(document.getElementById("editar-monto").value);
     const categoria = document.getElementById("editar-categoria").value;
+    const metodo = "Manual";
+
+    if (!comercio || !monto) {
+      alert("Comercio y monto son requeridos");
+      return;
+    }
 
     try {
-      const res = await fetch(`${API}/api/gastos/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monto, comercio, categoria })
-      });
-      if (!res.ok) throw new Error("No se pudo editar");
+      if (id) {
+        const res = await fetch(`${API}/api/gastos/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ monto, comercio, categoria })
+        });
+        if (!res.ok) throw new Error("No se pudo editar");
+      } else {
+        const res = await fetch(`${API}/api/gastos/crear?monto=${monto}&comercio=${encodeURIComponent(comercio)}&categoria=${categoria}&metodo=${metodo}`, {
+          method: "POST"
+        });
+        if (!res.ok) throw new Error("No se pudo crear");
+      }
       cerrarModal();
       cargarDatos();
     } catch (error) {
-      alert("Error al editar: " + error.message);
+      alert("Error: " + error.message);
     }
   }
 
