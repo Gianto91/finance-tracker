@@ -1,6 +1,7 @@
 import os
 import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from email.utils import parsedate_to_datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -62,8 +63,10 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
         return database.gasto_ya_existe(email_id, user_id)
 
     correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
+    print(f"📧 Se encontraron {len(correos)} correos nuevos")
     guardados = 0
     descartados = 0
+    fuera_fecha = 0
 
     for correo in correos:
         datos = email_parser.parsear_correo(correo["texto"])
@@ -71,16 +74,18 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
         if not datos.get("es_gasto"):
             descartados += 1
             print(
-                f"  -> Correo descartado: {correo['id']} | "
+                f"  -> ❌ Correo descartado (no es gasto): {correo['id']} | "
                 f"asunto: {correo.get('asunto', '')}"
             )
             continue
 
         fecha_gasto = datos.get("fecha") or _fecha_del_correo(correo)
+        print(f"  -> Fecha extraída: {fecha_gasto}")
         if not _es_de_hoy(fecha_gasto):
+            fuera_fecha += 1
             print(
-                f"  -> Correo fuera de fecha: {correo['id']} | "
-                f"asunto: {correo.get('asunto', '')} | fecha: {fecha_gasto}"
+                f"  -> ⏰ Correo fuera de fecha (hoy={datetime.now(ZoneInfo('America/Lima')).date()}): {correo['id']} | "
+                f"fecha: {fecha_gasto}"
             )
             continue
 
@@ -100,11 +105,10 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
             metodo=datos.get("metodo") or "Otro",
         )
         guardados += 1
-        print(f"  -> Gasto guardado: S/ {datos['monto']} en {datos.get('comercio')}")
+        print(f"  -> ✅ Gasto guardado: S/ {datos['monto']} en {datos.get('comercio')}")
 
     print(
-        f"Resumen de revisión: {guardados} guardados, "
-        f"{descartados} descartados de {len(correos)} correos nuevos"
+        f"Resumen: {guardados} guardados, {descartados} no-gastos, {fuera_fecha} fuera de fecha de {len(correos)} correos"
     )
 
 
@@ -219,31 +223,21 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
-    print(f"DEBUG /revisar-ahora: Buscando user_id={user_id}")
+    print(f"🔍 /revisar-ahora: Revisando para user_id={user_id}")
 
     # Verificar si el usuario tiene token de Gmail
     user = database.get_user(user_id)
-    print(f"DEBUG /revisar-ahora: Usuario encontrado: {user is not None}")
 
     if not user:
-        # Debug: ver todos los usuarios en la BD
-        conn = database.get_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, email FROM users")
-        todos = cur.fetchall()
-        cur.close()
-        conn.close()
-        print(f"DEBUG: Usuarios en BD: {todos}")
         return {"status": "error", "message": "Usuario no encontrado"}
 
-    print(f"DEBUG /revisar-ahora: Token de Gmail: {user.get('google_token') is not None}")
     if not user.get("google_token"):
         return {"status": "error", "message": "Necesitas conectar tu Gmail para scrapear. Vuelve a iniciar sesión."}
 
     # Ejecutar en thread separado para responder inmediatamente
     thread = threading.Thread(target=revisar_correos_nuevos, args=(user_id,), daemon=True)
     thread.start()
-    return {"status": "ok", "message": "Revisando correos..."}
+    return {"status": "ok", "message": "Revisando correos... (checa el dashboard en unos segundos)"}
 
 
 
