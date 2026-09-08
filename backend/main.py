@@ -250,13 +250,15 @@ def revisar_ahora(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/gastos/crear")
 def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: str = "Otro", user_id: str = Depends(obtener_user_id)):
     """Crea un gasto manualmente (útil en modo demo sin Gmail)."""
+    from zoneinfo import ZoneInfo
+    ahora_lima = datetime.now(ZoneInfo("America/Lima"))
     database.guardar_gasto(
-        fecha=datetime.now().isoformat(),
+        fecha=ahora_lima.isoformat(),
         monto=monto,
         comercio=comercio,
         categoria=categoria,
         metodo=metodo,
-        email_id=f"manual-{datetime.now().timestamp()}",
+        email_id=f"manual-{ahora_lima.timestamp()}",
         user_id=user_id
     )
     return {"status": "ok", "monto": monto, "comercio": comercio}
