@@ -1179,7 +1179,8 @@
         if (!res.ok) throw new Error("No se pudo editar");
       } else {
         const res = await fetch(`${API}/api/gastos/crear?monto=${monto}&comercio=${encodeURIComponent(comercio)}&categoria=${categoria}&metodo=${metodo}`, {
-          method: "POST"
+          method: "POST",
+          headers: obtenerHeadersConAuth()
         });
         if (!res.ok) throw new Error("No se pudo crear");
       }
@@ -1389,14 +1390,12 @@
     });
   }
 
-  // Mostrar modal Beta una sola vez por despliegue
+  // Mostrar modal Beta una sola vez por sesión (recarga de página)
   function mostrarModalBeta() {
-    const deployVersion = Math.floor(Date.now() / 3600000); // Nueva versión cada hora (simula despliegue)
-    const ultimaVersionVista = localStorage.getItem('ultima_version_beta_vista');
-
-    if (ultimaVersionVista !== String(deployVersion)) {
+    const betaShown = sessionStorage.getItem('hormiguita_beta_shown');
+    if (!betaShown) {
       document.getElementById('modal-beta').style.display = 'flex';
-      localStorage.setItem('ultima_version_beta_vista', String(deployVersion));
+      sessionStorage.setItem('hormiguita_beta_shown', 'true');
     }
   }
 
