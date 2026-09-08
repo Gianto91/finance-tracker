@@ -170,7 +170,8 @@ scheduler.start()
 @app.get("/api/gastos/dia")
 def gastos_dia(user_id: str = Depends(obtener_user_id)):
     from datetime import datetime
-    hoy = datetime.now().date().isoformat()
+    from zoneinfo import ZoneInfo
+    hoy = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
     gastos = database.todos_los_gastos(user_id)
     return [g for g in gastos if g["fecha"].startswith(hoy)]
 
