@@ -1,4 +1,5 @@
 import os
+import threading
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
@@ -207,8 +208,10 @@ def revisar_ahora(user_id: str = Depends(obtener_user_id)):
         print(f"⚠️ /revisar-ahora llamado por user_id={user_id}, pero solo usuario principal ({main_user_id}) puede scrapear")
         return {"status": "ok", "message": "Scraping solo disponible para el usuario principal."}
 
-    revisar_correos_nuevos(user_id)
-    return {"status": "ok"}
+    # Ejecutar en thread separado para responder inmediatamente
+    thread = threading.Thread(target=revisar_correos_nuevos, args=(user_id,), daemon=True)
+    thread.start()
+    return {"status": "ok", "message": "Revisando correos..."}
 
 
 
