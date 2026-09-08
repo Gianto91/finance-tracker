@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "cd backend && uvicorn main:app --host 0.0.0.0 --port 8080"
+
+[[services.volumes]]
+name = "db"
+mount_path = "/app/backend"
