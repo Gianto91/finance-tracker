@@ -143,24 +143,19 @@ def _es_de_hoy(fecha):
 
 def revisar_todos_los_usuarios():
     """Revisa correos para todos los usuarios autenticados."""
-    usuarios = database.obtener_todos_usuarios()
+    conn = database.get_connection()
+    usuarios = conn.execute("SELECT id FROM users").fetchall()
+    conn.close()
+
     if not usuarios:
         print("⚠️ No hay usuarios para revisar")
         return
 
     for usuario in usuarios:
-        revisar_correos_nuevos(usuario["id"])
-
-
-def obtener_todos_usuarios():
-    """Obtiene lista de todos los usuarios de la BD."""
-    conn = database.get_connection()
-    rows = conn.execute("SELECT id FROM users").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-database.obtener_todos_usuarios = obtener_todos_usuarios
+        try:
+            revisar_correos_nuevos(usuario["id"])
+        except Exception as e:
+            print(f"❌ Error scrappeando para usuario {usuario['id']}: {e}")
 
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
