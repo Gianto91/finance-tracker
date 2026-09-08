@@ -48,11 +48,20 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
     print(f"[{datetime.now()}] ✨ NUEVO: Revisando correos para user_id={user_id}...")
     _reparar_gastos_anteriores(user_id)
 
+    # Obtener el token del usuario de la BD
+    user = database.get_user(user_id)
+    token_json_str = None
+    if user and user.get("google_token"):
+        token_json_str = user["google_token"]
+        print(f"✅ Usando token del usuario {user_id}")
+    else:
+        print(f"⚠️  No hay token para {user_id}, intentando token global")
+
     # Crear callback que filtre por user_id
     def gasto_existe_para_user(email_id):
         return database.gasto_ya_existe(email_id, user_id)
 
-    correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user)
+    correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
     guardados = 0
     descartados = 0
 
@@ -104,8 +113,15 @@ def _reparar_gastos_anteriores(user_id: str = "legacy-user"):
     if not gastos:
         return
 
+    # Obtener el token del usuario
+    user = database.get_user(user_id)
+    token_json_str = None
+    if user and user.get("google_token"):
+        token_json_str = user["google_token"]
+
     correos = gmail_scraper.obtener_correos_por_ids(
-        [gasto["email_id"] for gasto in gastos if gasto.get("email_id")]
+        [gasto["email_id"] for gasto in gastos if gasto.get("email_id")],
+        token_json_str
     )
     reparados = 0
     for correo in correos:
@@ -149,25 +165,22 @@ def _es_de_hoy(fecha):
         return False
 
 
-def _get_main_user_id():
-    """Obtiene el ID del usuario principal (el primero que se creó)."""
-    conn = database.get_connection()
-    user = conn.execute("SELECT id FROM users ORDER BY creado_en LIMIT 1").fetchone()
-    conn.close()
-    return user["id"] if user else None
-
-
 def revisar_todos_los_usuarios():
-    """Revisa correos SOLO para el usuario principal."""
-    main_user_id = _get_main_user_id()
-    if not main_user_id:
-        print("⚠️ No hay usuarios para revisar")
+    """Revisa correos para TODOS los usuarios que tienen token de Gmail."""
+    conn = database.get_connection()
+    usuarios = conn.execute("SELECT id, google_token FROM users WHERE google_token IS NOT NULL").fetchall()
+    conn.close()
+
+    if not usuarios:
+        print("⚠️ No hay usuarios con token de Gmail para revisar")
         return
 
-    try:
-        revisar_correos_nuevos(main_user_id)
-    except Exception as e:
-        print(f"❌ Error scrappeando para usuario principal: {e}")
+    print(f"📧 Revisando correos para {len(usuarios)} usuarios")
+    for usuario in usuarios:
+        try:
+            revisar_correos_nuevos(usuario["id"])
+        except Exception as e:
+            print(f"❌ Error scrappeando para usuario {usuario['id']}: {e}")
 
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
@@ -203,10 +216,13 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
-    main_user_id = _get_main_user_id()
-    if user_id != main_user_id:
-        print(f"⚠️ /revisar-ahora llamado por user_id={user_id}, pero solo usuario principal ({main_user_id}) puede scrapear")
-        return {"status": "ok", "message": "Scraping solo disponible para el usuario principal."}
+    # Verificar si el usuario tiene token de Gmail
+    user = database.get_user(user_id)
+    if not user:
+        return {"status": "error", "message": "Usuario no encontrado"}
+
+    if not user.get("google_token"):
+        return {"status": "error", "message": "Necesitas conectar tu Gmail para scrapear. Vuelve a iniciar sesión."}
 
     # Ejecutar en thread separado para responder inmediatamente
     thread = threading.Thread(target=revisar_correos_nuevos, args=(user_id,), daemon=True)
@@ -266,7 +282,8 @@ def auth_login():
     """Redirige a Google OAuth para que el usuario se autentique."""
     client_id = auth.GOOGLE_CLIENT_ID
     redirect_uri = auth.GOOGLE_REDIRECT_URI
-    scope = "openid%20profile%20email"
+    # Agregar scope de Gmail para que cada usuario pueda scrapear sus propios emails
+    scope = "openid%20profile%20email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly"
 
     if not client_id:
         return {"error": "GOOGLE_CLIENT_ID no configurado"}
@@ -276,7 +293,8 @@ def auth_login():
         f"client_id={client_id}&"
         f"redirect_uri={redirect_uri}&"
         f"response_type=code&"
-        f"scope={scope}"
+        f"scope={scope}&"
+        f"access_type=offline"
     )
     return RedirectResponse(url=google_auth_url)
 

@@ -116,8 +116,8 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
     # Obtener o crear usuario
     user = database.get_or_create_user(google_id, email, nombre)
 
-    # Guardar el access token en la BD (en producción, encriptarlo)
-    database.update_user_token(user["id"], token_response.get("refresh_token") or access_token)
+    # Guardar el token COMPLETO como JSON (para que el scraper pueda acceder a Gmail de cada usuario)
+    database.update_user_token(user["id"], json.dumps(token_response))
 
     # Crear JWT token
     jwt_token = create_jwt_token(user["id"])

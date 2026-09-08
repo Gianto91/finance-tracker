@@ -41,30 +41,48 @@ def _query_hoy():
     return f"from:({remitentes}) after:{hoy.isoformat().replace('-', '/')}"
 
 
-def _get_service():
+def _get_service(token_json_str=None):
+    """
+    Obtiene el servicio de Gmail API.
+    Si token_json_str es None, intenta usar el token global del ambiente (backwards compat).
+    Si token_json_str es proporcionado (JSON string), lo usa directamente.
+    """
     creds = None
 
-    print(f"DEBUG: Variables de entorno disponibles: {list(os.environ.keys())[:10]}")
-    token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
-    print(f"DEBUG: token_json_env = {str(token_json_env)[:50] if token_json_env else 'None'}")
-
-    if token_json_env:
+    # Si se proporciona un token específico (para multi-user), usarlo directamente
+    if token_json_str:
         try:
-            print("📌 Leyendo token desde variable de entorno...")
+            print("📌 Usando token proporcionado del usuario...")
             creds = Credentials.from_authorized_user_info(
-                json.loads(token_json_env), SCOPES
+                json.loads(token_json_str), SCOPES
             )
-            print("✅ Token cargado desde env")
+            print("✅ Token del usuario cargado")
         except Exception as e:
-            print(f"❌ Error al cargar token: {e}")
+            print(f"❌ Error al cargar token del usuario: {e}")
             return None
-    elif TOKEN_PATH.exists():
-        print("📌 Leyendo token desde archivo local...")
-        creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
-        print("✅ Token cargado desde archivo")
     else:
-        print("❌ No hay token (env ni local)")
-        return None
+        # Fallback: usar token global del ambiente (para usuario principal legacy)
+        print(f"DEBUG: Variables de entorno disponibles: {list(os.environ.keys())[:10]}")
+        token_json_env = os.environ.get("GOOGLE_TOKEN_JSON")
+        print(f"DEBUG: token_json_env = {str(token_json_env)[:50] if token_json_env else 'None'}")
+
+        if token_json_env:
+            try:
+                print("📌 Leyendo token desde variable de entorno...")
+                creds = Credentials.from_authorized_user_info(
+                    json.loads(token_json_env), SCOPES
+                )
+                print("✅ Token cargado desde env")
+            except Exception as e:
+                print(f"❌ Error al cargar token: {e}")
+                return None
+        elif TOKEN_PATH.exists():
+            print("📌 Leyendo token desde archivo local...")
+            creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+            print("✅ Token cargado desde archivo")
+        else:
+            print("❌ No hay token (env ni local)")
+            return None
 
     if not creds or not creds.valid:
         print(f"⚠️  Credenciales inválidas. Expired: {creds.expired if creds else 'N/A'}")
@@ -139,13 +157,14 @@ def _extraer_texto(payload) -> str:
     return texto_plano
 
 
-def obtener_correos_nuevos(ya_procesados_fn):
+def obtener_correos_nuevos(ya_procesados_fn, token_json_str=None):
     """
     Devuelve una lista de dicts: {id, asunto, remitente, texto}
     para correos bancarios que aún no están en la base de datos.
     ya_procesados_fn: función que recibe un email_id y devuelve True/False
+    token_json_str: token JSON del usuario (si es None, usa el token global del ambiente)
     """
-    service = _get_service()
+    service = _get_service(token_json_str)
     if not service:
         print("⚠️  credentials.json no configurado. Modo demo: sin scraping de Gmail")
         return []
@@ -186,12 +205,12 @@ def obtener_correos_nuevos(ya_procesados_fn):
     return correos
 
 
-def obtener_correos_por_ids(ids):
+def obtener_correos_por_ids(ids, token_json_str=None):
     """Vuelve a obtener mensajes concretos para reparar datos ya guardados."""
     if not ids:
         return []
 
-    service = _get_service()
+    service = _get_service(token_json_str)
     if not service:
         return []
     correos = []
