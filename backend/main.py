@@ -168,7 +168,10 @@ def _es_de_hoy(fecha):
 def revisar_todos_los_usuarios():
     """Revisa correos para TODOS los usuarios que tienen token de Gmail."""
     conn = database.get_connection()
-    usuarios = conn.execute("SELECT id, google_token FROM users WHERE google_token IS NOT NULL").fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT id, google_token FROM users WHERE google_token IS NOT NULL")
+    usuarios = cur.fetchall()
+    cur.close()
     conn.close()
 
     if not usuarios:
@@ -178,9 +181,9 @@ def revisar_todos_los_usuarios():
     print(f"📧 Revisando correos para {len(usuarios)} usuarios")
     for usuario in usuarios:
         try:
-            revisar_correos_nuevos(usuario["id"])
+            revisar_correos_nuevos(usuario[0])  # usuario[0] es el id
         except Exception as e:
-            print(f"❌ Error scrappeando para usuario {usuario['id']}: {e}")
+            print(f"❌ Error scrappeando para usuario {usuario[0]}: {e}")
 
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
@@ -225,9 +228,12 @@ def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     if not user:
         # Debug: ver todos los usuarios en la BD
         conn = database.get_connection()
-        todos = conn.execute("SELECT id, email FROM users").fetchall()
+        cur = conn.cursor()
+        cur.execute("SELECT id, email FROM users")
+        todos = cur.fetchall()
+        cur.close()
         conn.close()
-        print(f"DEBUG: Usuarios en BD: {[dict(u) for u in todos]}")
+        print(f"DEBUG: Usuarios en BD: {todos}")
         return {"status": "error", "message": "Usuario no encontrado"}
 
     print(f"DEBUG /revisar-ahora: Token de Gmail: {user.get('google_token') is not None}")
@@ -275,8 +281,10 @@ def eliminar_gasto(gasto_id: int, user_id: str = Depends(obtener_user_id)):
 def borrar_todos():
     """⚠️ SOLO PARA ADMIN: Borra todos los gastos. USAR CON CUIDADO."""
     conn = database.get_connection()
-    conn.execute("DELETE FROM gastos")
+    cur = conn.cursor()
+    cur.execute("DELETE FROM gastos")
     conn.commit()
+    cur.close()
     conn.close()
     return {"status": "ok", "message": "Todos los gastos fueron eliminados"}
 
