@@ -1390,12 +1390,15 @@
     });
   }
 
-  // Mostrar modal Beta una sola vez por sesión (recarga de página)
+  // Mostrar modal Beta una sola vez por día (simula nuevo deployment)
   function mostrarModalBeta() {
-    const betaShown = sessionStorage.getItem('hormiguita_beta_shown');
+    const hoy = new Date().toDateString();
+    const betaKey = `hormiguita_beta_${hoy}`;
+    const betaShown = localStorage.getItem(betaKey);
+
     if (!betaShown) {
       document.getElementById('modal-beta').style.display = 'flex';
-      sessionStorage.setItem('hormiguita_beta_shown', 'true');
+      localStorage.setItem(betaKey, 'true');
     }
   }
 
