@@ -13,15 +13,22 @@ from datetime import datetime
 from pathlib import Path
 from html.parser import HTMLParser
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+load_dotenv()
+
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 TOKEN_PATH = Path(__file__).parent / "token.json"
 CREDENTIALS_PATH = Path(__file__).parent / "credentials.json"
+
+# Obtener credenciales de la app desde variables de entorno
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 # Ajusta esta lista a los remitentes de tus bancos/billeteras.
 REMITENTES_BANCARIOS = [
@@ -53,8 +60,13 @@ def _get_service(token_json_str=None):
     if token_json_str:
         try:
             print("📌 Usando token proporcionado del usuario...")
+            token_data = json.loads(token_json_str)
+            # Necesitamos pasar client_id y client_secret para que el token sea válido
             creds = Credentials.from_authorized_user_info(
-                json.loads(token_json_str), SCOPES
+                token_data,
+                scopes=SCOPES,
+                client_id=GOOGLE_CLIENT_ID,
+                client_secret=GOOGLE_CLIENT_SECRET
             )
             print("✅ Token del usuario cargado")
         except Exception as e:
