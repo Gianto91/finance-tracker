@@ -216,11 +216,21 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
+    print(f"DEBUG /revisar-ahora: Buscando user_id={user_id}")
+
     # Verificar si el usuario tiene token de Gmail
     user = database.get_user(user_id)
+    print(f"DEBUG /revisar-ahora: Usuario encontrado: {user is not None}")
+
     if not user:
+        # Debug: ver todos los usuarios en la BD
+        conn = database.get_connection()
+        todos = conn.execute("SELECT id, email FROM users").fetchall()
+        conn.close()
+        print(f"DEBUG: Usuarios en BD: {[dict(u) for u in todos]}")
         return {"status": "error", "message": "Usuario no encontrado"}
 
+    print(f"DEBUG /revisar-ahora: Token de Gmail: {user.get('google_token') is not None}")
     if not user.get("google_token"):
         return {"status": "error", "message": "Necesitas conectar tu Gmail para scrapear. Vuelve a iniciar sesión."}
 
