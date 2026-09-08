@@ -136,7 +136,10 @@ def _es_de_hoy(fecha):
     if not fecha:
         return True
     try:
-        return datetime.fromisoformat(fecha).date() == datetime.now().date()
+        from zoneinfo import ZoneInfo
+        fecha_dt = datetime.fromisoformat(fecha).date()
+        hoy = datetime.now(ZoneInfo("America/Lima")).date()
+        return fecha_dt == hoy
     except ValueError:
         return False
 
