@@ -801,6 +801,16 @@
     </div>
   </div>
 
+  <!-- Modal Beta Welcome -->
+  <div id="modal-beta" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; padding:20px; display:flex; align-items:center; justify-content:center;">
+    <div style="background:#1a1a1a; border-radius:20px; padding:40px; max-width:320px; border:1px solid rgba(230, 74, 25, 0.3); text-align:center;">
+      <div style="font-size:48px; margin-bottom:20px;">🐜</div>
+      <h2 style="margin:0 0 15px; font-size:24px; color:var(--text);">¡Bienvenido a Hormiguita!</h2>
+      <p style="margin:0 0 30px; font-size:14px; color:var(--text-soft); line-height:1.6;">Aún estamos en fase <strong>Beta</strong>. Si encuentras issues o tienes feedback, ¡tu aporte es valioso para mejorar!</p>
+      <button onclick="cerrarModalBeta()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px;">Entendido</button>
+    </div>
+  </div>
+
   <nav class="footer-nav" aria-label="Navegación principal">
     <button class="nav-item active" onclick="cambiarTab('inicio')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
@@ -1379,6 +1389,21 @@
     });
   }
 
+  // Mostrar modal Beta una sola vez por despliegue
+  function mostrarModalBeta() {
+    const deployVersion = Math.floor(Date.now() / 3600000); // Nueva versión cada hora (simula despliegue)
+    const ultimaVersionVista = localStorage.getItem('ultima_version_beta_vista');
+
+    if (ultimaVersionVista !== String(deployVersion)) {
+      document.getElementById('modal-beta').style.display = 'flex';
+      localStorage.setItem('ultima_version_beta_vista', String(deployVersion));
+    }
+  }
+
+  function cerrarModalBeta() {
+    document.getElementById('modal-beta').style.display = 'none';
+  }
+
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
     // Migrar datos legacy solo UNA VEZ (primera autenticación)
@@ -1389,6 +1414,8 @@
     }
     cargarDatos();
     setInterval(cargarDatos, 60000);
+    // Mostrar modal Beta después de cargar datos
+    setTimeout(mostrarModalBeta, 500);
   }
   document.getElementById("modal-editar").onclick = (e) => {
     if (e.target.id === "modal-editar") cerrarModal();
