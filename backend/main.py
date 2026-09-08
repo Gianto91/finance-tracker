@@ -198,8 +198,11 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
-    revisar_correos_nuevos(user_id)
-    return {"status": "ok"}
+    # Solo el usuario principal (con GOOGLE_TOKEN_JSON) puede scrappear
+    # Los otros usuarios deben agregar gastos manualmente
+    print(f"⚠️ /revisar-ahora llamado por user_id={user_id}, pero scraping solo disponible para usuario principal")
+    return {"status": "ok", "message": "Scraping solo disponible para usuario principal. Usa '+Manual' para agregar gastos."}
+
 
 
 @app.post("/api/gastos/crear")
