@@ -141,10 +141,31 @@ def _es_de_hoy(fecha):
         return False
 
 
+def revisar_todos_los_usuarios():
+    """Revisa correos para todos los usuarios autenticados."""
+    usuarios = database.obtener_todos_usuarios()
+    if not usuarios:
+        print("⚠️ No hay usuarios para revisar")
+        return
+
+    for usuario in usuarios:
+        revisar_correos_nuevos(usuario["id"])
+
+
+def obtener_todos_usuarios():
+    """Obtiene lista de todos los usuarios de la BD."""
+    conn = database.get_connection()
+    rows = conn.execute("SELECT id FROM users").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+database.obtener_todos_usuarios = obtener_todos_usuarios
+
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
 intervalo = int(os.environ.get("SCAN_INTERVAL_MINUTES", 2))  # 2 minutos es el estándar
-scheduler.add_job(revisar_correos_nuevos, "interval", minutes=intervalo)
+scheduler.add_job(revisar_todos_los_usuarios, "interval", minutes=intervalo)
 scheduler.start()
 
 
