@@ -80,10 +80,11 @@ def init_db():
     # Crear índice único para (user_id, email_id) para prevenir duplicados
     try:
         conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_gastos_user_email ON gastos(user_id, email_id) WHERE estado = 'activo'"
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_gastos_user_email ON gastos(user_id, email_id)"
         )
         conn.commit()
-    except:
+    except Exception as e:
+        print(f"ℹ️ Índice ya existe o error: {e}")
         pass
 
     conn.close()
