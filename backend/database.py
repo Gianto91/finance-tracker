@@ -77,6 +77,15 @@ def init_db():
     except:
         pass
 
+    # Crear índice único para (user_id, email_id) para prevenir duplicados
+    try:
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_gastos_user_email ON gastos(user_id, email_id) WHERE estado = 'activo'"
+        )
+        conn.commit()
+    except:
+        pass
+
     conn.close()
     _migrate_legacy_data()
 
@@ -100,13 +109,18 @@ def gasto_ya_existe(email_id: str, user_id: str = "legacy-user") -> bool:
 
 def guardar_gasto(fecha, monto, comercio, categoria, metodo, email_id, user_id: str = "legacy-user"):
     conn = get_connection()
-    conn.execute(
-        """INSERT INTO gastos (user_id, fecha, monto, comercio, categoria, metodo, email_id, creado_en)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (user_id, fecha, monto, comercio, categoria, metodo, email_id, datetime.now().isoformat()),
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute(
+            """INSERT INTO gastos (user_id, fecha, monto, comercio, categoria, metodo, email_id, creado_en)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (user_id, fecha, monto, comercio, categoria, metodo, email_id, datetime.now().isoformat()),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # Email ya existe para este usuario (race condition de dos procesos simultáneos)
+        print(f"⚠️ Gasto {email_id} ya existe para {user_id}, ignorando duplicado")
+    finally:
+        conn.close()
 
 
 def gastos_con_comercio_invalido():
