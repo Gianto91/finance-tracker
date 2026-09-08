@@ -30,11 +30,15 @@ def obtener_user_id(request: Request) -> str:
     """Extrae user_id del JWT en el header Authorization."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
+        print("⚠️ No hay Authorization header")
         return "legacy-user"
     token = auth_header.split(" ")[1]
     user_id = auth.verify_jwt_token(token)
+    print(f"DEBUG: Token={token[:20]}..., user_id={user_id}")
     if not user_id:
+        print("⚠️ Token inválido")
         return "legacy-user"
+    print(f"✅ Usando user_id={user_id}")
     return user_id
 
 
