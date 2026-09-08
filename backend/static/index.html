@@ -1381,8 +1381,12 @@
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
-    // Migrar datos legacy si es primera vez
-    fetch(`${API}/api/auth/migrate-legacy`, { method: 'POST', headers: obtenerHeadersConAuth() }).catch(() => {});
+    // Migrar datos legacy solo UNA VEZ (primera autenticación)
+    const migracionExecutada = localStorage.getItem('migracion_legacy_ejecutada');
+    if (!migracionExecutada) {
+      fetch(`${API}/api/auth/migrate-legacy`, { method: 'POST', headers: obtenerHeadersConAuth() }).catch(() => {});
+      localStorage.setItem('migracion_legacy_ejecutada', 'true');
+    }
     cargarDatos();
     setInterval(cargarDatos, 60000);
   }
