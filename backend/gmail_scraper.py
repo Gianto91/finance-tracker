@@ -61,12 +61,15 @@ def _get_service(token_json_str=None):
         try:
             print("📌 Usando token proporcionado del usuario...")
             token_data = json.loads(token_json_str)
-            # Necesitamos pasar client_id y client_secret para que el token sea válido
-            creds = Credentials.from_authorized_user_info(
-                token_data,
-                scopes=SCOPES,
+            # Crear Credentials manualmente (sin requerir que todos los campos estén presentes)
+            creds = Credentials(
+                token=token_data.get('access_token'),
+                refresh_token=token_data.get('refresh_token'),
+                id_token=token_data.get('id_token'),
+                token_uri=token_data.get('token_uri', 'https://oauth2.googleapis.com/token'),
                 client_id=GOOGLE_CLIENT_ID,
-                client_secret=GOOGLE_CLIENT_SECRET
+                client_secret=GOOGLE_CLIENT_SECRET,
+                scopes=SCOPES
             )
             print("✅ Token del usuario cargado")
         except Exception as e:
