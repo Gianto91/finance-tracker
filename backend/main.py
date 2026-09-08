@@ -148,21 +148,25 @@ def _es_de_hoy(fecha):
         return False
 
 
-def revisar_todos_los_usuarios():
-    """Revisa correos para todos los usuarios autenticados."""
+def _get_main_user_id():
+    """Obtiene el ID del usuario principal (el primero que se creó)."""
     conn = database.get_connection()
-    usuarios = conn.execute("SELECT id FROM users").fetchall()
+    user = conn.execute("SELECT id FROM users ORDER BY creado_en LIMIT 1").fetchone()
     conn.close()
+    return user["id"] if user else None
 
-    if not usuarios:
+
+def revisar_todos_los_usuarios():
+    """Revisa correos SOLO para el usuario principal."""
+    main_user_id = _get_main_user_id()
+    if not main_user_id:
         print("⚠️ No hay usuarios para revisar")
         return
 
-    for usuario in usuarios:
-        try:
-            revisar_correos_nuevos(usuario["id"])
-        except Exception as e:
-            print(f"❌ Error scrappeando para usuario {usuario['id']}: {e}")
+    try:
+        revisar_correos_nuevos(main_user_id)
+    except Exception as e:
+        print(f"❌ Error scrappeando para usuario principal: {e}")
 
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
@@ -198,10 +202,13 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
-    # Solo el usuario principal (con GOOGLE_TOKEN_JSON) puede scrappear
-    # Los otros usuarios deben agregar gastos manualmente
-    print(f"⚠️ /revisar-ahora llamado por user_id={user_id}, pero scraping solo disponible para usuario principal")
-    return {"status": "ok", "message": "Scraping solo disponible para usuario principal. Usa '+Manual' para agregar gastos."}
+    main_user_id = _get_main_user_id()
+    if user_id != main_user_id:
+        print(f"⚠️ /revisar-ahora llamado por user_id={user_id}, pero solo usuario principal ({main_user_id}) puede scrapear")
+        return {"status": "ok", "message": "Scraping solo disponible para el usuario principal."}
+
+    revisar_correos_nuevos(user_id)
+    return {"status": "ok"}
 
 
 
