@@ -18,7 +18,7 @@ import auth
 
 load_dotenv()
 
-app = FastAPI(title="Hormiguita - Gestión de Gastos")
+app = FastAPI(title="Hormiguita - Gestión de Gastos v2")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
