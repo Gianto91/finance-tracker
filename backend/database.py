@@ -9,7 +9,9 @@ from contextlib import contextmanager
 from urllib.parse import urlparse
 
 # Obtener DATABASE_URL de variables de entorno (Railway lo proporciona automáticamente)
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/hormiguita")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL no está configurada. Vincula el PostgreSQL service en Railway.")
 
 
 def get_connection():
