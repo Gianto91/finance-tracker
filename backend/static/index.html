@@ -1549,7 +1549,9 @@
     const busqueda = busquedaEl ? busquedaEl.value.toLowerCase() : "";
     const categoria = categoriaEl ? categoriaEl.value : "";
 
-    fetch(`${API}/api/gastos/buscar?q=${busqueda}&categoria=${categoria}`)
+    fetch(`${API}/api/gastos/buscar?q=${busqueda}&categoria=${categoria}`, {
+      headers: obtenerHeadersConAuth()
+    })
       .then(r => r.json())
       .then(gastos => {
         gastosActuales = gastos.sort((a, b) => {
