@@ -370,16 +370,13 @@ def set_budget_limit(user_id: str, limite_mensual: float):
     """Establece o actualiza el límite mensual de presupuesto."""
     with get_cursor() as cur:
         ahora = datetime.now().isoformat()
-        try:
-            cur.execute(
-                "INSERT INTO budget_limits (user_id, limite_mensual, creado_en, actualizado_en) VALUES (%s, %s, %s, %s)",
-                (user_id, limite_mensual, ahora, ahora)
-            )
-        except psycopg2.IntegrityError:
-            cur.execute(
-                "UPDATE budget_limits SET limite_mensual = %s, actualizado_en = %s WHERE user_id = %s",
-                (limite_mensual, ahora, user_id)
-            )
+        # Usar UPSERT (INSERT ... ON CONFLICT ... DO UPDATE) para PostgreSQL
+        cur.execute("""
+            INSERT INTO budget_limits (user_id, limite_mensual, creado_en, actualizado_en)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE
+            SET limite_mensual = EXCLUDED.limite_mensual, actualizado_en = EXCLUDED.actualizado_en
+        """, (user_id, limite_mensual, ahora, ahora))
 
 
 def get_budget_limit(user_id: str) -> float:
