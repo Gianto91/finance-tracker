@@ -350,6 +350,29 @@ def auth_logout():
     return {"status": "ok", "message": "Sesión cerrada. Elimina el token del cliente."}
 
 
+@app.get("/api/auth/reconnect-gmail")
+def auth_reconnect_gmail(user_id: str = Depends(obtener_user_id)):
+    """Redirige a Google OAuth para reconectar Gmail sin cerrar sesión."""
+    client_id = auth.GOOGLE_CLIENT_ID
+    redirect_uri = auth.GOOGLE_REDIRECT_URI
+    scope = "openid%20profile%20email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly"
+
+    if not client_id:
+        return {"error": "GOOGLE_CLIENT_ID no configurado"}
+
+    # Agregar prompt=consent para forzar que Google retorne refresh_token
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={client_id}&"
+        f"redirect_uri={redirect_uri}&"
+        f"response_type=code&"
+        f"scope={scope}&"
+        f"access_type=offline&"
+        f"prompt=consent"
+    )
+    return RedirectResponse(url=google_auth_url)
+
+
 @app.post("/api/auth/migrate-legacy")
 def auth_migrate_legacy(user_id: str = Depends(obtener_user_id)):
     """Migra gastos legacy al usuario actual."""
