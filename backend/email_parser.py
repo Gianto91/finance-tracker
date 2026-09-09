@@ -28,6 +28,10 @@ PATRON_MONTO_YAPE = re.compile(
     rf"monto\s+total\s+S/\.?\s*({NUMERO_MONTO})",
     re.IGNORECASE,
 )
+PATRON_MONTO_YAPE_NUEVO = re.compile(
+    rf"monto\s+de\s+yapeo[\s\S]*?S/[\s\S]*?({NUMERO_MONTO})",
+    re.IGNORECASE,
+)
 PATRON_MONTO_INTERBANK_PLIN = re.compile(
     rf"monto\s+y\s+moneda[\s\S]*?(?:S/\.?\s*)?({NUMERO_MONTO})",
     re.IGNORECASE,
@@ -195,6 +199,7 @@ def _detectar_monto(texto: str):
     for patron in (
         PATRON_MONTO_CONSUMO,
         PATRON_MONTO_YAPEO,
+        PATRON_MONTO_YAPE_NUEVO,
         PATRON_MONTO_PRESTAMO,
         PATRON_MONTO_YAPE,
         PATRON_MONTO_INTERBANK_PLIN,
