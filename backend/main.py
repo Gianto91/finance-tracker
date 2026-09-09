@@ -242,10 +242,14 @@ def insights(user_id: str = Depends(obtener_user_id)):
 @app.post("/api/budget-limit")
 def set_budget(monto: float, user_id: str = Depends(obtener_user_id)):
     """Establece el límite mensual de presupuesto."""
-    if monto <= 0:
-        return {"status": "error", "message": "El límite debe ser mayor a 0"}
-    database.set_budget_limit(user_id, monto)
-    return {"status": "ok", "message": f"Límite establecido en S/ {monto:.2f}"}
+    try:
+        if monto <= 0:
+            return {"status": "error", "message": "El límite debe ser mayor a 0"}
+        database.set_budget_limit(user_id, monto)
+        return {"status": "ok", "message": f"Límite establecido en S/ {monto:.2f}"}
+    except Exception as e:
+        print(f"❌ Error en set_budget: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 @app.get("/api/hormiguitas")
