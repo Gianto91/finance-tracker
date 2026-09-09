@@ -24,13 +24,15 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
 
-# Middleware para desactivar caché en desarrollo
+# Middleware para desactivar caché solo en HTML
 @app.middleware("http")
 async def no_cache_middleware(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    # Solo aplicar no-cache a HTML (GET /)
+    if request.method == "GET" and request.url.path == "/":
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 database.init_db()
