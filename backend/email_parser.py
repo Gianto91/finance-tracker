@@ -54,8 +54,8 @@ PATRON_MONTO_BBVA = re.compile(
     re.IGNORECASE,
 )
 PATRON_MONTO_SIP = re.compile(
-    rf"Monto[\s\S]*?S/[\s\S]*?({NUMERO_MONTO})",
-    re.IGNORECASE,
+    rf"Monto.*?S/\s*({NUMERO_MONTO})",
+    re.IGNORECASE | re.DOTALL,
 )
 
 # Palabras que indican que el correo es un INGRESO (no un gasto) —
