@@ -437,6 +437,17 @@
     padding: 8px 8px 4px;
   }
 
+  .fecha-separator {
+    padding: 12px 12px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
   .gasto-row {
     display: flex;
     justify-content: space-between;
@@ -599,7 +610,7 @@
     border: 1px solid rgba(255,107,53,0.3);
     border-radius: 24px;
     padding: 20px;
-    margin-bottom: 48px;
+    margin-bottom: 16px;
   }
 
   .insights-card.alert {
@@ -1144,23 +1155,44 @@
     const inicio = (paginaActual - 1) * GASTOS_POR_PAGINA;
     const gastosPagina = gastosActuales.slice(inicio, inicio + GASTOS_POR_PAGINA);
     const paginas = Math.ceil(gastosActuales.length / GASTOS_POR_PAGINA);
-    cont.innerHTML = gastosPagina.map(g => `
-      <div class="gasto-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-        <div class="gasto-main" style="flex:1;">
-          <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
-          <div class="gasto-info">
-            <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
-            <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
-            <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+
+    // Agrupar por fecha
+    const porFecha = {};
+    gastosPagina.forEach(g => {
+      const fecha = g.fecha.split("T")[0]; // YYYY-MM-DD
+      if (!porFecha[fecha]) porFecha[fecha] = [];
+      porFecha[fecha].push(g);
+    });
+
+    const fechasOrdenadas = Object.keys(porFecha).sort().reverse(); // Mayor a menor (más reciente primero)
+    const html = fechasOrdenadas.map(fecha => {
+      const gastos = porFecha[fecha];
+      const fechaObj = new Date(fecha + "T00:00:00");
+      const fechaFormato = fechaObj.toLocaleDateString("es-PE", { weekday: "short", year: "2-digit", month: "2-digit", day: "2-digit" }).toUpperCase();
+
+      return `
+        <div class="fecha-separator">${fechaFormato}</div>
+        ${gastos.map(g => `
+          <div class="gasto-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div class="gasto-main" style="flex:1;">
+              <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
+              <div class="gasto-info">
+                <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
+                <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
+                <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
+              <button onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')" style="padding:6px 8px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:6px; color:var(--accent); cursor:pointer; font-size:11px; font-weight:600;">✏️</button>
+              <button onclick="eliminarGasto(${g.id})" style="padding:6px 8px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); border-radius:6px; color:var(--danger); cursor:pointer; font-size:11px; font-weight:600;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
-          <button onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')" style="padding:6px 8px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:6px; color:var(--accent); cursor:pointer; font-size:11px; font-weight:600;">✏️</button>
-          <button onclick="eliminarGasto(${g.id})" style="padding:6px 8px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); border-radius:6px; color:var(--danger); cursor:pointer; font-size:11px; font-weight:600;">🗑️</button>
-        </div>
-      </div>
-    `).join("") + `
+        `).join("")}
+      `;
+    }).join("");
+
+    cont.innerHTML = html + `
       <div class="pagination">
         <button class="page-btn" onclick="cambiarPagina(-1)" ${paginaActual === 1 ? "disabled" : ""}>Anterior</button>
         <span class="page-label">Página ${paginaActual} de ${paginas}</span>
