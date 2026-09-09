@@ -1427,18 +1427,33 @@
       if (!res.ok) throw new Error("No se pudieron cargar los insights");
       const insights = await res.json();
 
-      document.getElementById("insight-promedio").textContent = `S/ ${insights.promedio_diario.toFixed(2)}`;
-      document.getElementById("insight-proyeccion").textContent = `S/ ${insights.proyeccion_fin_mes.toFixed(2)}`;
+      // Actualizar todos los elementos con estos IDs (puede haber duplicados en Inicio y Movimientos)
+      document.querySelectorAll("#insight-promedio").forEach(el => {
+        el.textContent = `S/ ${insights.promedio_diario.toFixed(2)}`;
+      });
+      document.querySelectorAll("#insight-proyeccion").forEach(el => {
+        el.textContent = `S/ ${insights.proyeccion_fin_mes.toFixed(2)}`;
+      });
 
-      const alertaEl = document.getElementById("insight-alert");
-      if (insights.alerta) {
-        alertaEl.innerHTML = `⚠️ <strong>¡Gastaste ${insights.porcentaje_diferencia.toFixed(0)}% más que el mes pasado!</strong><br>Este mes: S/ ${insights.gasto_mes_actual.toFixed(2)} vs Mes pasado: S/ ${insights.gasto_mes_pasado.toFixed(2)}`;
-        alertaEl.style.display = "block";
-        document.getElementById("insights-card").classList.add("alert");
-      } else {
-        alertaEl.style.display = "none";
-        document.getElementById("insights-card").classList.remove("alert");
-      }
+      const alertaEls = document.querySelectorAll("#insight-alert");
+      const insightCards = document.querySelectorAll(".insights-card");
+
+      alertaEls.forEach(alertaEl => {
+        if (insights.alerta) {
+          alertaEl.innerHTML = `⚠️ <strong>¡Gastaste ${insights.porcentaje_diferencia.toFixed(0)}% más que el mes pasado!</strong><br>Este mes: S/ ${insights.gasto_mes_actual.toFixed(2)} vs Mes pasado: S/ ${insights.gasto_mes_pasado.toFixed(2)}`;
+          alertaEl.style.display = "block";
+        } else {
+          alertaEl.style.display = "none";
+        }
+      });
+
+      insightCards.forEach(card => {
+        if (insights.alerta) {
+          card.classList.add("alert");
+        } else {
+          card.classList.remove("alert");
+        }
+      });
     } catch (error) {
       console.error("Error cargando insights:", error);
     }
