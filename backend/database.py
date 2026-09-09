@@ -352,3 +352,58 @@ def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):
             'comercio': row[4], 'categoria': row[5], 'metodo': row[6], 'email_id': row[7],
             'creado_en': row[8], 'estado': row[9]
         } for row in rows]
+
+
+def obtener_insights(user_id: str = "legacy-user"):
+    """Calcula insights: gasto mes actual, promedio diario, proyección fin de mes, alertas."""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    with get_cursor() as cur:
+        ahora = datetime.now(ZoneInfo("America/Lima"))
+
+        # Gasto TOTAL mes actual (desde día 1 hasta hoy)
+        primer_dia_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        cur.execute(
+            "SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE user_id = %s AND fecha >= %s AND estado = 'activo'",
+            (user_id, primer_dia_mes.isoformat())
+        )
+        gasto_mes_actual = float(cur.fetchone()[0] or 0)
+
+        # Gasto TOTAL mes pasado
+        primer_dia_mes_pasado = (primer_dia_mes - timedelta(days=1)).replace(day=1)
+        ultimo_dia_mes_pasado = primer_dia_mes - timedelta(days=1)
+        cur.execute(
+            "SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE user_id = %s AND fecha >= %s AND fecha <= %s AND estado = 'activo'",
+            (user_id, primer_dia_mes_pasado.isoformat(), ultimo_dia_mes_pasado.isoformat())
+        )
+        gasto_mes_pasado = float(cur.fetchone()[0] or 0)
+
+        # Días transcurridos en el mes actual
+        dias_transcurridos = ahora.day
+
+        # Promedio diario (gasto actual / días transcurridos)
+        promedio_diario = gasto_mes_actual / dias_transcurridos if dias_transcurridos > 0 else 0
+
+        # Proyección a fin de mes (promedio diario * 30 o 31)
+        dias_en_mes = 31 if ahora.month in [1, 3, 5, 7, 8, 10, 12] else (30 if ahora.month != 2 else 28)
+        proyeccion_fin_mes = promedio_diario * dias_en_mes
+
+        # Diferencia con mes pasado
+        diferencia_mes_pasado = gasto_mes_actual - gasto_mes_pasado
+        porcentaje_diferencia = (diferencia_mes_pasado / gasto_mes_pasado * 100) if gasto_mes_pasado > 0 else 0
+
+        # Alerta: Si gastó más del 20% comparado con mes pasado
+        alerta = diferencia_mes_pasado > 0 and porcentaje_diferencia > 20
+
+        return {
+            'gasto_mes_actual': round(gasto_mes_actual, 2),
+            'gasto_mes_pasado': round(gasto_mes_pasado, 2),
+            'promedio_diario': round(promedio_diario, 2),
+            'proyeccion_fin_mes': round(proyeccion_fin_mes, 2),
+            'diferencia_mes_pasado': round(diferencia_mes_pasado, 2),
+            'porcentaje_diferencia': round(porcentaje_diferencia, 2),
+            'alerta': alerta,
+            'dias_transcurridos': dias_transcurridos,
+            'dias_totales_mes': dias_en_mes,
+        }

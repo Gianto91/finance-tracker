@@ -222,6 +222,12 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
     return database.todos_los_gastos(user_id)
 
 
+@app.get("/api/insights")
+def insights(user_id: str = Depends(obtener_user_id)):
+    """Retorna insights: promedio diario, proyección, alertas."""
+    return database.obtener_insights(user_id)
+
+
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""
