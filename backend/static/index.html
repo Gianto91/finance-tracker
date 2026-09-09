@@ -883,6 +883,16 @@
 
   function cerrarSesion() {
     localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('migracion_legacy_ejecutada');
+    localStorage.removeItem('hormiguita_beta_shown');
+    // Limpiar todos los flags de beta por fecha
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('hormiguita_beta_')) {
+        localStorage.removeItem(key);
+      }
+    });
     location.href = '/';
   }
 
@@ -1442,6 +1452,9 @@
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
+    // Cerrar modal de sesión expirada si está abierto
+    document.getElementById('modal-sesion-expirada').style.display = 'none';
+
     // Migrar datos legacy solo UNA VEZ (primera autenticación)
     const migracionExecutada = localStorage.getItem('migracion_legacy_ejecutada');
     if (!migracionExecutada) {
