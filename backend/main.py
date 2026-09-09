@@ -303,9 +303,16 @@ def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: s
 
 
 @app.put("/api/gastos/{gasto_id}")
-def editar_gasto(gasto_id: int, monto: float = None, comercio: str = None,
-                  categoria: str = None, metodo: str = None, user_id: str = Depends(obtener_user_id)):
+async def editar_gasto(gasto_id: int, request: Request, user_id: str = Depends(obtener_user_id)):
     """Edita un gasto existente."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    monto = body.get("monto")
+    comercio = body.get("comercio")
+    categoria = body.get("categoria")
+    metodo = body.get("metodo")
     database.actualizar_gasto_por_id(gasto_id, monto, comercio, categoria, metodo)
     return {"status": "ok", "gasto_id": gasto_id}
 
