@@ -15,7 +15,6 @@ Bancos soportados:
 import re
 import os
 from datetime import datetime
-from anthropic import Anthropic
 
 # Patrones para montos en las constancias conocidas.
 NUMERO_MONTO = r"(?:\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:[.,]\d{1,2})?)"
@@ -294,6 +293,8 @@ def _parsear_con_claude(texto_correo: str) -> dict:
         if not api_key:
             return None
 
+        # Import solo si se va a usar (evita error si anthropic no está instalado)
+        from anthropic import Anthropic
         client = Anthropic(api_key=api_key)
         prompt = f"""Analiza este email de banco peruano y extrae la información de la transacción.
 
