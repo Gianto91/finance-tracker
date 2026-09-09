@@ -5,6 +5,7 @@ import os
 import psycopg2
 import uuid
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
