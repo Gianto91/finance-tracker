@@ -123,10 +123,12 @@ def _reparar_gastos_anteriores(user_id: str = "legacy-user"):
     if user and user.get("google_token"):
         token_json_str = user["google_token"]
 
-    correos = gmail_scraper.obtener_correos_por_ids(
-        [gasto["email_id"] for gasto in gastos if gasto.get("email_id")],
-        token_json_str
-    )
+    # Solo reparar gastos con email_id válido de Gmail (no gastos manuales con "manual-" prefix)
+    email_ids = [gasto["email_id"] for gasto in gastos if gasto.get("email_id") and not gasto["email_id"].startswith("manual-")]
+    if not email_ids:
+        return
+
+    correos = gmail_scraper.obtener_correos_por_ids(email_ids, token_json_str)
     reparados = 0
     for correo in correos:
         datos = email_parser.parsear_correo(correo["texto"])
