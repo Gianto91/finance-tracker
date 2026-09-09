@@ -101,12 +101,22 @@ def _get_service(token_json_str=None):
 
     if not creds or not creds.valid:
         print(f"⚠️  Credenciales inválidas. Expired: {creds.expired if creds else 'N/A'}")
-        if creds and creds.expired and creds.refresh_token:
-            print("🔄 Refrescando token...")
-            creds.refresh(Request())
-            print("✅ Token refrescado")
+        if creds and creds.expired:
+            if creds.refresh_token:
+                print("🔄 Refrescando token con refresh_token...")
+                try:
+                    creds.refresh(Request())
+                    print("✅ Token refrescado exitosamente")
+                except Exception as e:
+                    print(f"❌ Error al refrescar token: {e}")
+                    print("⚠️  Token expirado y no se puede refrescar. El usuario debe volver a hacer login.")
+                    return None
+            else:
+                print("❌ Token expirado pero NO hay refresh_token en el JSON guardado")
+                print("⚠️  El usuario debe volver a hacer login con Google (Salir + Entrar con Google)")
+                return None
         else:
-            print("❌ No se puede refrescar, necesita re-autorizar")
+            print("❌ No se puede usar credenciales, necesita re-autorizar")
             return None
     else:
         print("✅ Credenciales válidas")
