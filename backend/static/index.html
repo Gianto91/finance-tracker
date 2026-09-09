@@ -811,14 +811,13 @@
     </div>
   </div>
 
-  <!-- Modal Reconectar Gmail -->
-  <div id="modal-reconectar-gmail" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; padding:20px; display:flex; align-items:center; justify-content:center;">
+  <!-- Modal Sesión expirada -->
+  <div id="modal-sesion-expirada" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; padding:20px; display:flex; align-items:center; justify-content:center;">
     <div style="background:#1a1a1a; border-radius:20px; padding:40px; max-width:340px; border:1px solid rgba(230, 74, 25, 0.3); text-align:center;">
       <div style="font-size:48px; margin-bottom:20px;">⚠️</div>
-      <h2 style="margin:0 0 15px; font-size:20px; color:var(--text);">Reconectar Gmail</h2>
-      <p style="margin:0 0 20px; font-size:14px; color:var(--text-soft); line-height:1.6;">Tu acceso a Gmail ha expirado. Por favor, reconecta tu cuenta para que el scraper funcione nuevamente.</p>
-      <button onclick="reconectarGmail()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px; margin-bottom:10px;">Reconectar Gmail</button>
-      <button onclick="cerrarModalReconectar()" style="width:100%; padding:12px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:10px; color:var(--text); cursor:pointer; font-weight:600; font-size:14px;">Cancelar</button>
+      <h2 style="margin:0 0 15px; font-size:20px; color:var(--text);">Sesión expirada</h2>
+      <p style="margin:0 0 20px; font-size:14px; color:var(--text-soft); line-height:1.6;">Tu sesión ha expirado. Por favor, vuelve a iniciar sesión para continuar usando Hormiguita.</p>
+      <button onclick="cerrarSesion()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px;">Iniciar sesión</button>
     </div>
   </div>
 
@@ -1140,14 +1139,14 @@
       if (!res.ok) throw new Error("No se pudo revisar el correo");
       const data = await res.json();
       if (data.status === "error" && data.message.includes("Gmail")) {
-        mostrarModalReconectar();
+        mostrarModalSesionExpirada();
       } else {
         await cargarDatos();
       }
     } catch (error) {
       console.error(error);
       if (error.message.includes("Gmail") || error.message.includes("credentials")) {
-        mostrarModalReconectar();
+        mostrarModalSesionExpirada();
       }
     } finally {
       btn.disabled = false;
@@ -1437,22 +1436,8 @@
     document.getElementById('modal-beta').style.display = 'none';
   }
 
-  function mostrarModalReconectar() {
-    document.getElementById('modal-reconectar-gmail').style.display = 'flex';
-  }
-
-  function cerrarModalReconectar() {
-    document.getElementById('modal-reconectar-gmail').style.display = 'none';
-  }
-
-  function reconectarGmail() {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
-      window.location.href = `/api/auth/reconnect-gmail`;
-    } else {
-      alert('Sesión expirada. Por favor vuelve a iniciar sesión.');
-      cerrarSesion();
-    }
+  function mostrarModalSesionExpirada() {
+    document.getElementById('modal-sesion-expirada').style.display = 'flex';
   }
 
   // Verificar autenticación al cargar la página
