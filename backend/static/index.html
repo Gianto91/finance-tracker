@@ -1254,8 +1254,10 @@
     const porCategoria = {};
     gastos.forEach(g => { porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto; });
 
-    const labels = Object.keys(porCategoria);
-    const datos = Object.values(porCategoria);
+    // Ordenar por monto (mayor a menor)
+    const categoriasOrdenadas = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]);
+    const labels = categoriasOrdenadas.map(e => e[0]);
+    const datos = categoriasOrdenadas.map(e => e[1]);
     const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
     const ctx = document.getElementById("chartPieInicio");
@@ -1270,7 +1272,8 @@
         plugins: {
           legend: {
             position: "bottom",
-            labels: { color: "#f1f3f5", padding: 15, font: { size: 12 } }
+            labels: { color: "#f1f3f5", padding: 12, font: { size: 11 }, boxWidth: 12 },
+            maxWidth: 300
           }
         }
       }
@@ -1330,7 +1333,17 @@
     chartsInstances.pie = new Chart(ctx, {
       type: "doughnut",
       data: { labels, datasets: [{ data: datos, backgroundColor: colores }] },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: "#f1f3f5" } } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#f1f3f5", padding: 12, font: { size: 11 }, boxWidth: 12 },
+            maxWidth: 300
+          }
+        }
+      }
     });
   }
 
