@@ -35,7 +35,7 @@ REMITENTES_BANCARIOS = [
     # BCP
     "notificaciones@notificacionesbcp.com.pe",
     # Interbank
-    "servicioalclientetinterbank.com.pe",
+    "servicioalcliente@netinterbank.com.pe",
     # BBVA
     "procesos@bbva.com.pe",
     # Ripley
