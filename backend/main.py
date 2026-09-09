@@ -228,6 +228,27 @@ def insights(user_id: str = Depends(obtener_user_id)):
     return database.obtener_insights(user_id)
 
 
+@app.post("/api/budget-limit")
+def set_budget(monto: float, user_id: str = Depends(obtener_user_id)):
+    """Establece el límite mensual de presupuesto."""
+    if monto <= 0:
+        return {"status": "error", "message": "El límite debe ser mayor a 0"}
+    database.set_budget_limit(user_id, monto)
+    return {"status": "ok", "message": f"Límite establecido en S/ {monto:.2f}"}
+
+
+@app.get("/api/hormiguitas")
+def hormiguitas(user_id: str = Depends(obtener_user_id)):
+    """Retorna gastos hormiga (< S/5) del día actual."""
+    return database.detectar_gastos_hormiga(user_id)
+
+
+@app.get("/api/recurrentes")
+def recurrentes(user_id: str = Depends(obtener_user_id)):
+    """Retorna gastos recurrentes detectados (últimos 3 meses)."""
+    return database.detectar_gastos_recurrentes(user_id)
+
+
 @app.post("/api/revisar-ahora")
 def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     """Dispara manualmente una revisión de correos (botón del dashboard)."""

@@ -644,6 +644,48 @@
     text-align: center;
   }
 
+  .budget-card {
+    background: linear-gradient(135deg, rgba(75,192,192,0.15) 0%, rgba(75,192,192,0.08) 100%);
+    border: 1px solid rgba(75,192,192,0.3);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .budget-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  }
+
+  .budget-label { font-size: 12px; color: var(--text-soft); text-transform: uppercase; }
+
+  .budget-btn { background: rgba(75,192,192,0.3); border: 1px solid rgba(75,192,192,0.5); color: #4BC0C0; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+
+  .progress-bar {
+    width: 100%; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #4BC0C0 0%, #FF6B35 100%); transition: width 0.3s;
+  }
+
+  .progress-text { font-size: 12px; color: var(--text-soft); text-align: center; }
+
+  .hormiga-card, .recurrentes-card {
+    background: rgba(0,0,0,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  }
+
+  .hormiga-title, .recurrentes-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .hormiga-item, .recurrente-item {
+    display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .hormiga-item:last-child, .recurrente-item:last-child { border-bottom: none; }
+
+  .hormiga-name { font-size: 13px; color: var(--text); }
+
+  .hormiga-monto { font-size: 13px; color: #FF6B35; font-weight: 600; }
+
   @media (max-width: 380px) {
     body { padding-inline: 12px; }
     .topbar h1 { font-size: 24px; }
@@ -710,6 +752,35 @@
         </div>
       </div>
       <div id="insight-alert" class="alert-text" style="display:none;"></div>
+    </section>
+
+    <section class="budget-card" id="budget-card" style="display:none;">
+      <div class="budget-header">
+        <div class="budget-label">📊 Límite de presupuesto</div>
+        <button class="budget-btn" onclick="abrirModalLimite()">Editar</button>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="budget-fill" style="width: 0%;"></div>
+      </div>
+      <div class="progress-text">
+        <span id="budget-texto">S/ 0.00 de S/ 0.00</span> (<span id="budget-porcentaje">0</span>%)
+      </div>
+    </section>
+
+    <section class="hormiga-card" id="hormiga-card" style="display:none;">
+      <div class="hormiga-title">🐜 Gastos hormiga hoy</div>
+      <div id="hormiga-list"></div>
+      <div style="text-align: center; margin-top: 8px; font-size: 12px; color: var(--text-soft);">
+        Total: <strong id="hormiga-total">S/ 0.00</strong> (<span id="hormiga-count">0</span> gastos)
+      </div>
+    </section>
+
+    <section class="recurrentes-card" id="recurrentes-card" style="display:none;">
+      <div class="recurrentes-title">🔁 Gastos fijos mensuales</div>
+      <div id="recurrentes-list"></div>
+      <div style="text-align: center; margin-top: 8px; font-size: 12px; color: var(--text-soft);">
+        Estimado mensual: <strong id="recurrentes-total">S/ 0.00</strong>
+      </div>
     </section>
 
     <div class="actions">
@@ -989,6 +1060,9 @@
     renderChart(gastosActuales);
     renderGraficos(gastosActuales);
     cargarInsights();
+    cargarBudget();
+    cargarHormiguitas();
+    cargarRecurrentes();
   }
 
   function renderTotales(gastos) {
@@ -1197,6 +1271,115 @@
     paginaActual = Math.min(Math.max(1, paginaActual + direccion), paginas);
     renderLista();
     window.scrollTo({ top: document.getElementById("lista-gastos").offsetTop - 16, behavior: "smooth" });
+  }
+
+  async function cargarBudget() {
+    try {
+      const res = await fetch(`${API}/api/insights`, {
+        headers: obtenerHeadersConAuth()
+      });
+      if (!res.ok) return;
+      const insights = await res.json();
+
+      if (insights.limite_mensual) {
+        const budgetCard = document.getElementById("budget-card");
+        const budgetFill = document.getElementById("budget-fill");
+        const budgetTexto = document.getElementById("budget-texto");
+        const budgetPorcentaje = document.getElementById("budget-porcentaje");
+
+        budgetCard.style.display = "block";
+        budgetFill.style.width = `${insights.progreso_limite}%`;
+        budgetTexto.textContent = `S/ ${insights.gasto_mes_actual.toFixed(2)} de S/ ${insights.limite_mensual.toFixed(2)}`;
+        budgetPorcentaje.textContent = insights.progreso_limite.toFixed(0);
+
+        if (insights.progreso_limite >= 100) {
+          budgetFill.style.background = "linear-gradient(90deg, #FF6B35 0%, #FF4500 100%)";
+        } else if (insights.progreso_limite >= 80) {
+          budgetFill.style.background = "linear-gradient(90deg, #FFD700 0%, #FF6B35 100%)";
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando budget:", error);
+    }
+  }
+
+  async function cargarHormiguitas() {
+    try {
+      const res = await fetch(`${API}/api/hormiguitas`, {
+        headers: obtenerHeadersConAuth()
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.cantidad > 0) {
+        const hormiCard = document.getElementById("hormiga-card");
+        const hormigaList = document.getElementById("hormiga-list");
+        const hormiTotal = document.getElementById("hormiga-total");
+        const hormiCount = document.getElementById("hormiga-count");
+
+        hormiCard.style.display = "block";
+        hormigaList.innerHTML = data.gastos.map(g => `
+          <div class="hormiga-item">
+            <div class="hormiga-name">${g.comercio || g.categoria}</div>
+            <div class="hormiga-monto">S/ ${g.monto.toFixed(2)}</div>
+          </div>
+        `).join('');
+        hormiTotal.textContent = `S/ ${data.total.toFixed(2)}`;
+        hormiCount.textContent = data.cantidad;
+      }
+    } catch (error) {
+      console.error("Error cargando hormiguitas:", error);
+    }
+  }
+
+  async function cargarRecurrentes() {
+    try {
+      const res = await fetch(`${API}/api/recurrentes`, {
+        headers: obtenerHeadersConAuth()
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.cantidad > 0) {
+        const recurCard = document.getElementById("recurrentes-card");
+        const recurList = document.getElementById("recurrentes-list");
+        const recurTotal = document.getElementById("recurrentes-total");
+
+        recurCard.style.display = "block";
+        recurList.innerHTML = data.recurrentes.map(r => `
+          <div class="recurrente-item">
+            <div class="hormiga-name">${r.comercio} <span style="font-size: 11px; color: var(--text-soft);">(${r.frecuencia}x)</span></div>
+            <div class="hormiga-monto">S/ ${r.monto.toFixed(2)}</div>
+          </div>
+        `).join('');
+        recurTotal.textContent = `S/ ${data.total_mensual_estimado.toFixed(2)}`;
+      }
+    } catch (error) {
+      console.error("Error cargando recurrentes:", error);
+    }
+  }
+
+  function abrirModalLimite() {
+    const monto = prompt("¿Cuál es tu límite mensual de presupuesto? (en soles)");
+    if (!monto) return;
+
+    const cantidad = parseFloat(monto);
+    if (isNaN(cantidad) || cantidad <= 0) {
+      alert("Ingresa un número válido");
+      return;
+    }
+
+    fetch(`${API}/api/budget-limit?monto=${cantidad}`, {
+      method: "POST",
+      headers: obtenerHeadersConAuth()
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          cargarBudget();
+        }
+      })
+      .catch(console.error);
   }
 
   async function cargarInsights() {

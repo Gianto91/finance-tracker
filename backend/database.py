@@ -83,6 +83,17 @@ def init_db():
             WHERE estado = 'activo'
         """)
 
+        # Crear tabla budget_limits
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS budget_limits (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL UNIQUE,
+                limite_mensual REAL NOT NULL,
+                creado_en TEXT NOT NULL,
+                actualizado_en TEXT NOT NULL
+            )
+        """)
+
 
 def gasto_ya_existe(email_id: str, user_id: str = "legacy-user") -> bool:
     """Verifica si un gasto ya existe."""
@@ -354,10 +365,105 @@ def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):
         } for row in rows]
 
 
+def set_budget_limit(user_id: str, limite_mensual: float):
+    """Establece o actualiza el límite mensual de presupuesto."""
+    with get_cursor() as cur:
+        ahora = datetime.now().isoformat()
+        try:
+            cur.execute(
+                "INSERT INTO budget_limits (user_id, limite_mensual, creado_en, actualizado_en) VALUES (%s, %s, %s, %s)",
+                (user_id, limite_mensual, ahora, ahora)
+            )
+        except psycopg2.IntegrityError:
+            cur.execute(
+                "UPDATE budget_limits SET limite_mensual = %s, actualizado_en = %s WHERE user_id = %s",
+                (limite_mensual, ahora, user_id)
+            )
+
+
+def get_budget_limit(user_id: str) -> float:
+    """Obtiene el límite mensual del usuario (None si no tiene)."""
+    with get_cursor() as cur:
+        cur.execute("SELECT limite_mensual FROM budget_limits WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        return row[0] if row else None
+
+
+def detectar_gastos_hormiga(user_id: str = "legacy-user", umbral: float = 5.0):
+    """Detecta gastos pequeños (< umbral) del día actual."""
+    with get_cursor() as cur:
+        hoy = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
+        cur.execute(
+            "SELECT id, fecha, monto, comercio, categoria FROM gastos WHERE user_id = %s AND fecha = %s AND monto < %s AND estado = 'activo' ORDER BY monto DESC",
+            (user_id, hoy, umbral)
+        )
+        rows = cur.fetchall()
+        hormiguitas = []
+        for row in rows:
+            hormiguitas.append({
+                'id': row[0], 'fecha': row[1], 'monto': row[2],
+                'comercio': row[3], 'categoria': row[4]
+            })
+        total_hormiga = sum(h['monto'] for h in hormiguitas)
+        return {
+            'gastos': hormiguitas,
+            'total': round(total_hormiga, 2),
+            'cantidad': len(hormiguitas)
+        }
+
+
+def detectar_gastos_recurrentes(user_id: str = "legacy-user"):
+    """Detecta gastos que se repiten (probables pagos fijos como Netflix, internet, etc)."""
+    from collections import Counter
+
+    with get_cursor() as cur:
+        # Obtener últimos 3 meses de gastos
+        tres_meses_atras = (datetime.now(ZoneInfo("America/Lima")) - timedelta(days=90)).isoformat()
+        cur.execute(
+            "SELECT comercio, monto, categoria FROM gastos WHERE user_id = %s AND fecha >= %s AND estado = 'activo' ORDER BY comercio, monto",
+            (user_id, tres_meses_atras)
+        )
+        rows = cur.fetchall()
+
+        # Detectar patrones: mismo comercio + mismo monto = recurrente
+        recurrentes = {}
+        for comercio, monto, categoria in rows:
+            key = (comercio, round(monto, 2))
+            if key not in recurrentes:
+                recurrentes[key] = {'count': 0, 'monto': monto, 'comercio': comercio, 'categoria': categoria}
+            recurrentes[key]['count'] += 1
+
+        # Filtrar: debe aparecer al menos 2 veces en 3 meses (probablemente recurrente)
+        gastos_recurrentes = [
+            {
+                'comercio': v['comercio'],
+                'monto': round(v['monto'], 2),
+                'categoria': v['categoria'],
+                'frecuencia': v['count']
+            }
+            for v in recurrentes.values() if v['count'] >= 2
+        ]
+
+        # Ordenar por frecuencia
+        gastos_recurrentes.sort(key=lambda x: x['frecuencia'], reverse=True)
+
+        # Calcular total mensual estimado
+        total_mensual_estimado = sum(g['monto'] for g in gastos_recurrentes)
+
+        return {
+            'recurrentes': gastos_recurrentes,
+            'total_mensual_estimado': round(total_mensual_estimado, 2),
+            'cantidad': len(gastos_recurrentes)
+        }
+
+
 def obtener_insights(user_id: str = "legacy-user"):
-    """Calcula insights: gasto mes actual, promedio diario, proyección fin de mes, alertas."""
+    """Calcula insights: gasto mes actual, promedio diario, proyección fin de mes, alertas, límites."""
     from datetime import datetime, timedelta
     from zoneinfo import ZoneInfo
+
+    # Obtener límite de presupuesto
+    limite = get_budget_limit(user_id)
 
     with get_cursor() as cur:
         ahora = datetime.now(ZoneInfo("America/Lima"))
@@ -396,6 +502,11 @@ def obtener_insights(user_id: str = "legacy-user"):
         # Alerta: Si gastó más del 20% comparado con mes pasado
         alerta = diferencia_mes_pasado > 0 and porcentaje_diferencia > 20
 
+        # Calcular progreso de límite
+        progreso_limite = None
+        if limite:
+            progreso_limite = min(100, (gasto_mes_actual / limite * 100))
+
         return {
             'gasto_mes_actual': round(gasto_mes_actual, 2),
             'gasto_mes_pasado': round(gasto_mes_pasado, 2),
@@ -406,4 +517,6 @@ def obtener_insights(user_id: str = "legacy-user"):
             'alerta': alerta,
             'dias_transcurridos': dias_transcurridos,
             'dias_totales_mes': dias_en_mes,
+            'limite_mensual': limite,
+            'progreso_limite': round(progreso_limite, 1) if progreso_limite else None,
         }
