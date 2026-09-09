@@ -394,4 +394,10 @@ def auth_migrate_legacy(user_id: str = Depends(obtener_user_id)):
 
 
 # Sirve el dashboard (index.html) en la raíz
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+@app.get("/", response_class=HTMLResponse)
+def serve_index():
+    """Sirve el index.html con headers de no-caché."""
+    with open("static/index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+app.mount("/", StaticFiles(directory="static"), name="static")
