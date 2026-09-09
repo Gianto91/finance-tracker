@@ -2,9 +2,17 @@
 Extrae los datos del gasto usando expresiones regulares, directamente
 del texto del correo. Cero costo, cero dependencia de una API externa.
 
-Los patrones están ajustados a los formatos típicos de BCP, Yape y Plin.
+Los patrones están ajustados a los formatos típicos de BCP, Yape, Plin, BBVA.
 Si un banco cambia el formato de su correo, o agregas un banco nuevo,
 aquí es donde hay que ajustar el regex correspondiente.
+
+Bancos soportados:
+- Interbank (interbank@interbank.pe)
+- BCP (bcp@bcp.com.pe)
+- Scotiabank (scotiabank@scotiabank.com.pe)
+- BBVA (procesos@bbva.com.pe)
+- Yape
+- Plin
 """
 import re
 from datetime import datetime
@@ -36,6 +44,10 @@ PATRON_MONTO_YAPEO = re.compile(
 )
 PATRON_MONTO_PRESTAMO = re.compile(
     rf"cuota\s+\d+\s+S/\.?\s*({NUMERO_MONTO})",
+    re.IGNORECASE,
+)
+PATRON_MONTO_BBVA = re.compile(
+    rf"monto\s*[:\-]?\s*S/\.?\s*({NUMERO_MONTO})",
     re.IGNORECASE,
 )
 
@@ -187,6 +199,7 @@ def _detectar_monto(texto: str):
         PATRON_MONTO_PRESTAMO,
         PATRON_MONTO_YAPE,
         PATRON_MONTO_INTERBANK_PLIN,
+        PATRON_MONTO_BBVA,
         PATRON_MONTO_LIGO,
         PATRON_MONTO,
     ):
