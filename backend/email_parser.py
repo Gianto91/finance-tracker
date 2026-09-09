@@ -69,6 +69,11 @@ PATRONES_NO_GASTO = [
 
 # Detecta el comercio/persona: busca después de palabras clave típicas
 PATRONES_COMERCIO = [
+    # Yape: Yapero o Beneficiario
+    re.compile(
+        r"(?:Yapero|Nombre del Beneficiario)\s*[:\-]?\s*([^\n]{2,80})",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\bdestinatario\s*[:\-]?\s*([^\n]{2,80})",
         re.IGNORECASE,
