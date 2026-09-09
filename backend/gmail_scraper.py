@@ -32,10 +32,22 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 # Ajusta esta lista a los remitentes de tus bancos/billeteras.
 REMITENTES_BANCARIOS = [
+    # BCP
     "notificaciones@notificacionesbcp.com.pe",
-    "notificaciones@yape.pe",
-    "no-reply@ligo.pe",
+    # Interbank
     "servicioalcliente@netinterbank.com.pe",
+    # BBVA
+    "procesos@bbva.com.pe",
+    # Ripley
+    "alerta-autorizaciones@notificaciones.bancoripley.com.pe",
+    # SIP
+    "noreply@sip.pe",
+    # Yape / Plin
+    "notificaciones@yape.pe",
+    # Ligo
+    "no-reply@ligo.pe",
+    # Scotiabank (agregar email exacto si lo tienes)
+    # "operaciones@scotiabank.com.pe",
 ]
 
 # La búsqueda se construye para el día actual al momento de revisar.
