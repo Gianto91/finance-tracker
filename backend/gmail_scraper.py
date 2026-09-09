@@ -35,13 +35,14 @@ REMITENTES_BANCARIOS = [
     # BCP
     "notificaciones@notificacionesbcp.com.pe",
     # Interbank
-    "servicioalcliente@netinterbank.com.pe",
+    "servicioalclientetinterbank.com.pe",
     # BBVA
     "procesos@bbva.com.pe",
     # Ripley
     "alerta-autorizaciones@notificaciones.bancoripley.com.pe",
-    # SIP
+    # SIP (Yape/Plin/Tarjeta)
     "noreply@sip.pe",
+    "no-reply@operaciones.agora.pe",
     # Yape / Plin
     "notificaciones@yape.pe",
     # Ligo

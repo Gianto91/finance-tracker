@@ -53,6 +53,10 @@ PATRON_MONTO_BBVA = re.compile(
     rf"monto\s*[:\-]?\s*S/\.?\s*({NUMERO_MONTO})",
     re.IGNORECASE,
 )
+PATRON_MONTO_SIP = re.compile(
+    rf"Monto[\s\S]*?S/[\s\S]*?({NUMERO_MONTO})",
+    re.IGNORECASE,
+)
 
 # Palabras que indican que el correo es un INGRESO (no un gasto) —
 # si aparecen, lo ignoramos para no contarlo como gasto
@@ -207,6 +211,7 @@ def _detectar_monto(texto: str):
         PATRON_MONTO_YAPE_NUEVO,
         PATRON_MONTO_PRESTAMO,
         PATRON_MONTO_YAPE,
+        PATRON_MONTO_SIP,
         PATRON_MONTO_INTERBANK_PLIN,
         PATRON_MONTO_BBVA,
         PATRON_MONTO_LIGO,
