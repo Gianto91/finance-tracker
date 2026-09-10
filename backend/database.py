@@ -52,17 +52,6 @@ def init_db():
             )
         """)
 
-        # Agregar columna last_scrape_error si no existe (para usuarios existentes)
-        try:
-            cur.execute("ALTER TABLE users ADD COLUMN last_scrape_error TEXT")
-        except psycopg2.ProgrammingError:
-            pass  # Columna ya existe
-
-        # Agregar columna scraping_in_progress si no existe
-        try:
-            cur.execute("ALTER TABLE users ADD COLUMN scraping_in_progress BOOLEAN DEFAULT FALSE")
-        except psycopg2.ProgrammingError:
-            pass  # Columna ya existe
 
         # Crear tabla gastos
         cur.execute("""
@@ -385,6 +374,25 @@ def is_scraping(user_id: str) -> bool:
         cur.execute("SELECT scraping_in_progress FROM users WHERE id = %s", (user_id,))
         row = cur.fetchone()
         return row[0] if row else False
+
+
+def _add_column_if_missing(column_name: str, column_type: str):
+    """Agrega una columna a la tabla users si no existe. Cada columna en su propia transacción."""
+    try:
+        with get_cursor() as cur:
+            cur.execute(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}")
+            print(f"✅ Columna {column_name} agregada")
+    except psycopg2.ProgrammingError as e:
+        if "already exists" in str(e):
+            pass  # Columna ya existe
+        else:
+            print(f"⚠️ Error al agregar {column_name}: {e}")
+
+
+def migrate_schema():
+    """Ejecuta migraciones de esquema. Llamar después de init_db()."""
+    _add_column_if_missing("last_scrape_error", "TEXT")
+    _add_column_if_missing("scraping_in_progress", "BOOLEAN DEFAULT FALSE")
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):

@@ -36,6 +36,7 @@ async def no_cache_middleware(request: Request, call_next):
     return response
 
 database.init_db()
+database.migrate_schema()
 database.normalizar_categorias_existentes()
 
 
