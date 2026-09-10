@@ -163,7 +163,21 @@ def _reparar_gastos_anteriores(user_id: str = "legacy-user"):
     if not email_ids:
         return
 
-    correos = gmail_scraper.obtener_correos_por_ids(email_ids, token_json_str)
+    try:
+        correos = gmail_scraper.obtener_correos_por_ids(email_ids, token_json_str)
+        if correos is None:
+            error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
+            database.set_scrape_error(user_id, error_msg)
+            print(f"❌ Error en reparación: {error_msg}")
+            return
+    except Exception as e:
+        error_msg = f"Error al reparar gastos: {str(e)}"
+        if "refresh_token" in str(e):
+            error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
+        database.set_scrape_error(user_id, error_msg)
+        print(f"❌ {error_msg}")
+        return
+
     reparados = 0
     for correo in correos:
         datos = email_parser.parsear_correo(correo["texto"])
