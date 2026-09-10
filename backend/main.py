@@ -332,8 +332,11 @@ def scrape_status(user_id: str = Depends(obtener_user_id)):
     if is_scraping_now:
         return {"status": "scraping", "is_scraping": True}
 
+    user = database.get_user(user_id)
+    first_scrape = user.get("first_scrape_attempted", False) if user else False
+
     error = database.get_scrape_error(user_id)
-    if error:
+    if error and first_scrape:
         return {"status": "error", "message": error, "type": "token_expired", "is_scraping": False}
 
     return {"status": "ok", "message": None, "is_scraping": False}

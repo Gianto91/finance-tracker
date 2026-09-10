@@ -346,12 +346,13 @@ def update_user_token(user_id: str, token_json: str):
 def get_user(user_id: str):
     """Obtiene un usuario."""
     with get_cursor() as cur:
-        cur.execute("SELECT id, google_id, email, nombre, google_token, creado_en FROM users WHERE id = %s", (user_id,))
+        cur.execute("SELECT id, google_id, email, nombre, google_token, creado_en, last_scrape_error, first_scrape_attempted FROM users WHERE id = %s", (user_id,))
         row = cur.fetchone()
         if row:
             return {
                 'id': row[0], 'google_id': row[1], 'email': row[2], 'nombre': row[3],
-                'google_token': row[4], 'creado_en': row[5]
+                'google_token': row[4], 'creado_en': row[5], 'last_scrape_error': row[6],
+                'first_scrape_attempted': row[7] if row[7] is not None else False
             }
         return None
 
@@ -377,9 +378,9 @@ def clear_scrape_error(user_id: str):
 
 
 def marcar_scraping_iniciado(user_id: str):
-    """Marca que el scraping comenzó para el usuario."""
+    """Marca que el scraping comenzó para el usuario y que ya intentó scrapear."""
     with get_cursor() as cur:
-        cur.execute("UPDATE users SET scraping_in_progress = TRUE WHERE id = %s", (user_id,))
+        cur.execute("UPDATE users SET scraping_in_progress = TRUE, first_scrape_attempted = TRUE WHERE id = %s", (user_id,))
 
 
 def marcar_scraping_terminado(user_id: str):
@@ -413,6 +414,7 @@ def migrate_schema():
     """Ejecuta migraciones de esquema. Llamar después de init_db()."""
     _add_column_if_missing("last_scrape_error", "TEXT")
     _add_column_if_missing("scraping_in_progress", "BOOLEAN DEFAULT FALSE")
+    _add_column_if_missing("first_scrape_attempted", "BOOLEAN DEFAULT FALSE")
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):
