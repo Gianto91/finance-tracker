@@ -318,8 +318,28 @@ def get_or_create_user(google_id: str, email: str, nombre: str) -> dict:
 
 
 def update_user_token(user_id: str, token_json: str):
-    """Actualiza el token del usuario."""
+    """Actualiza el token del usuario, preservando refresh_token si es necesario."""
+    import json
+
     with get_cursor() as cur:
+        # Obtener el token viejo
+        cur.execute("SELECT google_token FROM users WHERE id = %s", (user_id,))
+        result = cur.fetchone()
+        old_token_json = result[0] if result else None
+
+        # Si el nuevo token no tiene refresh_token pero el viejo sí, preservarlo
+        try:
+            new_token = json.loads(token_json)
+            if not new_token.get("refresh_token") and old_token_json:
+                old_token = json.loads(old_token_json)
+                if old_token.get("refresh_token"):
+                    # Copiar refresh_token del viejo al nuevo
+                    new_token["refresh_token"] = old_token["refresh_token"]
+                    token_json = json.dumps(new_token)
+                    print(f"✅ refresh_token preservado para usuario {user_id}")
+        except (json.JSONDecodeError, TypeError):
+            pass  # Si hay error, guardar el nuevo token así como está
+
         cur.execute("UPDATE users SET google_token = %s WHERE id = %s", (token_json, user_id))
 
 
