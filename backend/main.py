@@ -73,7 +73,20 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
     def gasto_existe_para_user(email_id):
         return database.gasto_ya_existe(email_id, user_id)
 
-    correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
+    try:
+        correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
+        if correos is None:
+            error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
+            database.set_scrape_error(user_id, error_msg)
+            print(f"❌ Error: {error_msg}")
+            return
+        # Si tuvo éxito, limpiar el error anterior
+        database.clear_scrape_error(user_id)
+    except Exception as e:
+        error_msg = f"Error al obtener correos: {str(e)}"
+        database.set_scrape_error(user_id, error_msg)
+        print(f"❌ {error_msg}")
+        return
     print(f"📧 Se encontraron {len(correos)} correos nuevos")
     guardados = 0
     descartados = 0
@@ -278,10 +291,22 @@ def revisar_ahora(user_id: str = Depends(obtener_user_id)):
     if not user.get("google_token"):
         return {"status": "error", "message": "Necesitas conectar tu Gmail para scrapear. Vuelve a iniciar sesión."}
 
+    # Limpiar error anterior antes de intentar de nuevo
+    database.clear_scrape_error(user_id)
+
     # Ejecutar en thread separado para responder inmediatamente
     thread = threading.Thread(target=revisar_correos_nuevos, args=(user_id,), daemon=True)
     thread.start()
     return {"status": "ok", "message": "Revisando correos... (checa el dashboard en unos segundos)"}
+
+
+@app.get("/api/scrape-status")
+def scrape_status(user_id: str = Depends(obtener_user_id)):
+    """Devuelve el status del último scraping (si hay error de sesión expirada)."""
+    error = database.get_scrape_error(user_id)
+    if error:
+        return {"status": "error", "message": error, "type": "token_expired"}
+    return {"status": "ok", "message": None}
 
 
 
@@ -303,16 +328,9 @@ def crear_gasto(monto: float, comercio: str, categoria: str = "Otros", metodo: s
 
 
 @app.put("/api/gastos/{gasto_id}")
-async def editar_gasto(gasto_id: int, request: Request, user_id: str = Depends(obtener_user_id)):
+def editar_gasto(gasto_id: int, monto: float = None, comercio: str = None,
+                  categoria: str = None, metodo: str = None, user_id: str = Depends(obtener_user_id)):
     """Edita un gasto existente."""
-    try:
-        body = await request.json()
-    except:
-        body = {}
-    monto = body.get("monto")
-    comercio = body.get("comercio")
-    categoria = body.get("categoria")
-    metodo = body.get("metodo")
     database.actualizar_gasto_por_id(gasto_id, monto, comercio, categoria, metodo)
     return {"status": "ok", "gasto_id": gasto_id}
 

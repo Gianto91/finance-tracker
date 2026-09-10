@@ -47,9 +47,16 @@ def init_db():
                 email TEXT UNIQUE NOT NULL,
                 nombre TEXT,
                 google_token TEXT,
-                creado_en TEXT NOT NULL
+                creado_en TEXT NOT NULL,
+                last_scrape_error TEXT
             )
         """)
+
+        # Agregar columna last_scrape_error si no existe (para usuarios existentes)
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN last_scrape_error TEXT")
+        except psycopg2.ProgrammingError:
+            pass  # Columna ya existe
 
         # Crear tabla gastos
         cur.execute("""
@@ -332,6 +339,26 @@ def get_user(user_id: str):
                 'google_token': row[4], 'creado_en': row[5]
             }
         return None
+
+
+def set_scrape_error(user_id: str, error_msg: str):
+    """Guarda el último error de scraping para el usuario."""
+    with get_cursor() as cur:
+        cur.execute("UPDATE users SET last_scrape_error = %s WHERE id = %s", (error_msg, user_id))
+
+
+def get_scrape_error(user_id: str):
+    """Obtiene el último error de scraping del usuario."""
+    with get_cursor() as cur:
+        cur.execute("SELECT last_scrape_error FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+        return row[0] if row and row[0] else None
+
+
+def clear_scrape_error(user_id: str):
+    """Limpia el error de scraping del usuario."""
+    with get_cursor() as cur:
+        cur.execute("UPDATE users SET last_scrape_error = NULL WHERE id = %s", (user_id,))
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):
