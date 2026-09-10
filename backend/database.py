@@ -58,6 +58,12 @@ def init_db():
         except psycopg2.ProgrammingError:
             pass  # Columna ya existe
 
+        # Agregar columna scraping_in_progress si no existe
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN scraping_in_progress BOOLEAN DEFAULT FALSE")
+        except psycopg2.ProgrammingError:
+            pass  # Columna ya existe
+
         # Crear tabla gastos
         cur.execute("""
             CREATE TABLE IF NOT EXISTS gastos (
@@ -359,6 +365,26 @@ def clear_scrape_error(user_id: str):
     """Limpia el error de scraping del usuario."""
     with get_cursor() as cur:
         cur.execute("UPDATE users SET last_scrape_error = NULL WHERE id = %s", (user_id,))
+
+
+def marcar_scraping_iniciado(user_id: str):
+    """Marca que el scraping comenzó para el usuario."""
+    with get_cursor() as cur:
+        cur.execute("UPDATE users SET scraping_in_progress = TRUE WHERE id = %s", (user_id,))
+
+
+def marcar_scraping_terminado(user_id: str):
+    """Marca que el scraping terminó para el usuario."""
+    with get_cursor() as cur:
+        cur.execute("UPDATE users SET scraping_in_progress = FALSE WHERE id = %s", (user_id,))
+
+
+def is_scraping(user_id: str) -> bool:
+    """Verifica si el usuario está actualmente scrapeando."""
+    with get_cursor() as cur:
+        cur.execute("SELECT scraping_in_progress FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+        return row[0] if row else False
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):

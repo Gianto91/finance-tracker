@@ -58,35 +58,45 @@ def obtener_user_id(request: Request) -> str:
 def revisar_correos_nuevos(user_id: str = "legacy-user"):
     """Job que corre cada N minutos: trae correos, los parsea y guarda."""
     print(f"[{datetime.now()}] ✨ NUEVO: Revisando correos para user_id={user_id}...")
-    _reparar_gastos_anteriores(user_id)
-
-    # Obtener el token del usuario de la BD
-    user = database.get_user(user_id)
-    token_json_str = None
-    if user and user.get("google_token"):
-        token_json_str = user["google_token"]
-        print(f"✅ Usando token del usuario {user_id}")
-    else:
-        print(f"⚠️  No hay token para {user_id}, intentando token global")
-
-    # Crear callback que filtre por user_id
-    def gasto_existe_para_user(email_id):
-        return database.gasto_ya_existe(email_id, user_id)
 
     try:
-        correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
-        if correos is None:
-            error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
+        # Marcar que scraping inició (solo si es un usuario real, no legacy)
+        if user_id != "legacy-user":
+            database.marcar_scraping_iniciado(user_id)
+
+        _reparar_gastos_anteriores(user_id)
+
+        # Obtener el token del usuario de la BD
+        user = database.get_user(user_id)
+        token_json_str = None
+        if user and user.get("google_token"):
+            token_json_str = user["google_token"]
+            print(f"✅ Usando token del usuario {user_id}")
+        else:
+            print(f"⚠️  No hay token para {user_id}, intentando token global")
+
+        # Crear callback que filtre por user_id
+        def gasto_existe_para_user(email_id):
+            return database.gasto_ya_existe(email_id, user_id)
+
+        try:
+            correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
+            if correos is None:
+                error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
+                database.set_scrape_error(user_id, error_msg)
+                print(f"❌ Error: {error_msg}")
+                return
+            # Si tuvo éxito, limpiar el error anterior
+            database.clear_scrape_error(user_id)
+        except Exception as e:
+            error_msg = f"Error al obtener correos: {str(e)}"
             database.set_scrape_error(user_id, error_msg)
-            print(f"❌ Error: {error_msg}")
+            print(f"❌ {error_msg}")
             return
-        # Si tuvo éxito, limpiar el error anterior
-        database.clear_scrape_error(user_id)
-    except Exception as e:
-        error_msg = f"Error al obtener correos: {str(e)}"
-        database.set_scrape_error(user_id, error_msg)
-        print(f"❌ {error_msg}")
-        return
+    finally:
+        # Marcar que scraping terminó
+        if user_id != "legacy-user":
+            database.marcar_scraping_terminado(user_id)
     print(f"📧 Se encontraron {len(correos)} correos nuevos")
     guardados = 0
     descartados = 0
@@ -302,11 +312,16 @@ def revisar_ahora(user_id: str = Depends(obtener_user_id)):
 
 @app.get("/api/scrape-status")
 def scrape_status(user_id: str = Depends(obtener_user_id)):
-    """Devuelve el status del último scraping (si hay error de sesión expirada)."""
+    """Devuelve el status del scraping: si está en progreso o si hay error."""
+    is_scraping_now = database.is_scraping(user_id)
+    if is_scraping_now:
+        return {"status": "scraping", "is_scraping": True}
+
     error = database.get_scrape_error(user_id)
     if error:
-        return {"status": "error", "message": error, "type": "token_expired"}
-    return {"status": "ok", "message": None}
+        return {"status": "error", "message": error, "type": "token_expired", "is_scraping": False}
+
+    return {"status": "ok", "message": None, "is_scraping": False}
 
 
 

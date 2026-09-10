@@ -1476,17 +1476,42 @@
       const data = await res.json();
       if (data.status === "error" && data.message.includes("Gmail")) {
         mostrarModalSesionExpirada();
-      } else {
-        // Esperar 2.5 segundos para que el scraping complete en background
-        await new Promise(r => setTimeout(r, 2500));
-        // Consultar el status del scraping
-        const statusRes = await fetch(`${API}/api/scrape-status`, { headers: obtenerHeadersConAuth() });
-        const statusData = await statusRes.json();
-        if (statusData.status === "error" && statusData.type === "token_expired") {
-          mostrarModalSesionExpirada();
-        } else {
-          await cargarDatos();
+        return;
+      }
+
+      // Polling: esperar a que termine el scraping
+      let scrapeando = true;
+      let intentos = 0;
+      const maxIntentos = 60; // máximo 60 segundos de polling
+
+      while (scrapeando && intentos < maxIntentos) {
+        // Esperar 1 segundo entre polls
+        await new Promise(r => setTimeout(r, 1000));
+        intentos++;
+
+        try {
+          const statusRes = await fetch(`${API}/api/scrape-status`, { headers: obtenerHeadersConAuth() });
+          const statusData = await statusRes.json();
+
+          if (statusData.status === "error" && statusData.type === "token_expired") {
+            mostrarModalSesionExpirada();
+            return;
+          }
+
+          if (statusData.is_scraping === false) {
+            scrapeando = false;
+            // Ya terminó, cargar datos
+            await cargarDatos();
+          }
+        } catch (pollError) {
+          console.error("Error en polling:", pollError);
+          // Continuar intentando
         }
+      }
+
+      if (scrapeando) {
+        console.warn("Scraping tardó más de 60 segundos, mostrando datos disponibles");
+        await cargarDatos();
       }
     } catch (error) {
       console.error(error);
