@@ -711,6 +711,14 @@
 </style>
 </head>
 <body>
+  <!-- Banner de sesión expirada (aparece en la parte superior) -->
+  <div id="banner-sesion-expirada" style="display:none; position:fixed; top:0; left:0; right:0; background:linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); color:#000; padding:16px 20px; z-index:1000; text-align:center; font-weight:600;">
+    <div style="max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:15px;">
+      <span style="flex:1;">⚠️ Tu sesión de Gmail expiró. Los scrapeos se han detenido.</span>
+      <button onclick="cerrarSesion()" style="background:rgba(0,0,0,0.2); border:none; color:#000; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; white-space:nowrap;">Reconectarse</button>
+    </div>
+  </div>
+
   <!-- Login Screen (Multiuser OAuth) -->
   <div id="login-screen" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
     <div style="text-align:center; margin-bottom:40px;">
@@ -1058,6 +1066,19 @@
   }
 
   async function cargarDatos() {
+    // Verificar si hay error de sesión expirada
+    try {
+      const statusRes = await fetch(`${API}/api/scrape-status`, { headers: obtenerHeadersConAuth() });
+      const statusData = await statusRes.json();
+      if (statusData.status === "error" && statusData.type === "token_expired") {
+        document.getElementById('banner-sesion-expirada').style.display = 'flex';
+      } else {
+        document.getElementById('banner-sesion-expirada').style.display = 'none';
+      }
+    } catch (e) {
+      console.error("Error verificando status:", e);
+    }
+
     const endpoint = vistaActual === "todos" ? "/api/gastos/todos" : `/api/gastos/${vistaActual}`;
     const res = await fetch(`${API}${endpoint}`, {
       headers: obtenerHeadersConAuth()
