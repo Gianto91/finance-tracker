@@ -240,10 +240,39 @@ def revisar_todos_los_usuarios():
         except Exception as e:
             print(f"❌ Error scrappeando para usuario {usuario[0]}: {e}")
 
+def guardar_resumenes_mensuales_diarios():
+    """Job diario que guarda los resúmenes mensuales de todos los usuarios."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    ahora = datetime.now(ZoneInfo("America/Lima"))
+
+    # Obtener todos los usuarios
+    conn = database.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users")
+    usuarios = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    for usuario in usuarios:
+        user_id = usuario[0]
+        try:
+            # Obtener gasto del mes actual
+            gastos = database.todos_los_gastos(user_id)
+            gasto_mes = sum(g["monto"] for g in gastos if g["fecha"].startswith(f"{ahora.year}-{ahora.month:02d}"))
+
+            # Guardar resumen mensual
+            database.guardar_resumen_mensual(user_id, ahora.year, ahora.month, gasto_mes)
+        except Exception as e:
+            print(f"❌ Error guardando resumen mensual para {user_id}: {e}")
+
+
 # Programa el job para que corra solo, cada X minutos
 scheduler = BackgroundScheduler()
 intervalo = int(os.environ.get("SCAN_INTERVAL_MINUTES", 2))  # 2 minutos es el estándar
 scheduler.add_job(revisar_todos_los_usuarios, "interval", minutes=intervalo)
+scheduler.add_job(guardar_resumenes_mensuales_diarios, "cron", hour=0, minute=1)  # Diariamente a las 00:01
 scheduler.start()
 
 
@@ -275,6 +304,12 @@ def gastos_todos(user_id: str = Depends(obtener_user_id)):
 def insights(user_id: str = Depends(obtener_user_id)):
     """Retorna insights: promedio diario, proyección, alertas."""
     return database.obtener_insights(user_id)
+
+
+@app.get("/api/historial-mensual")
+def historial_mensual(user_id: str = Depends(obtener_user_id)):
+    """Retorna el historial de gastos mensuales del usuario."""
+    return database.obtener_historial_mensual(user_id)
 
 
 @app.post("/api/budget-limit")
