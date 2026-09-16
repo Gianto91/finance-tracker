@@ -146,17 +146,17 @@ def todos_los_gastos(user_id: str = "legacy-user"):
 
 
 def actualizar_gasto(email_id, monto, comercio, categoria, metodo, fecha=None):
-    """Actualiza un gasto."""
+    """Actualiza un gasto (NO sobrescribe categoria - puede ser editada por usuario)."""
     with get_cursor() as cur:
         if fecha:
             cur.execute(
-                """UPDATE gastos SET fecha = %s, monto = %s, comercio = %s, categoria = %s, metodo = %s WHERE email_id = %s""",
-                (fecha, monto, comercio, categoria, metodo, email_id),
+                """UPDATE gastos SET fecha = %s, monto = %s, comercio = %s, metodo = %s WHERE email_id = %s""",
+                (fecha, monto, comercio, metodo, email_id),
             )
         else:
             cur.execute(
-                """UPDATE gastos SET monto = %s, comercio = %s, categoria = %s, metodo = %s WHERE email_id = %s""",
-                (monto, comercio, categoria, metodo, email_id),
+                """UPDATE gastos SET monto = %s, comercio = %s, metodo = %s WHERE email_id = %s""",
+                (monto, comercio, metodo, email_id),
             )
 
 
