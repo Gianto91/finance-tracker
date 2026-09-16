@@ -221,8 +221,8 @@ def resumen_mes(user_id: str = "legacy-user"):
         } for row in rows]
 
 
-def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None, metodo=None):
-    """Actualiza un gasto por ID."""
+def actualizar_gasto_por_id(gasto_id, user_id, monto=None, comercio=None, categoria=None, metodo=None):
+    """Actualiza un gasto por ID (validando que perteneza al usuario)."""
     with get_cursor() as cur:
         campos = []
         valores = []
@@ -240,7 +240,8 @@ def actualizar_gasto_por_id(gasto_id, monto=None, comercio=None, categoria=None,
             valores.append(metodo)
         if campos:
             valores.append(gasto_id)
-            query = f"UPDATE gastos SET {', '.join(campos)} WHERE id = %s"
+            valores.append(user_id)
+            query = f"UPDATE gastos SET {', '.join(campos)} WHERE id = %s AND user_id = %s"
             cur.execute(query, valores)
 
 

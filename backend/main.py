@@ -370,6 +370,7 @@ async def editar_gasto(gasto_id: int, request: Request, user_id: str = Depends(o
 
     database.actualizar_gasto_por_id(
         gasto_id,
+        user_id,
         monto=data.get("monto"),
         comercio=data.get("comercio"),
         categoria=data.get("categoria"),
