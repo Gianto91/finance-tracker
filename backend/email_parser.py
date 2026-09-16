@@ -220,18 +220,27 @@ def _detectar_comercio_beautifulsoup(texto: str) -> str:
     try:
         soup = BeautifulSoup(texto, "html.parser")
 
-        # Buscar etiquetas con información de beneficiario/yapero
+        # PRIORIDAD 1: Buscar "Nombre del Beneficiario" (para Yape/Plin - el destinatario es quien importa)
         for tag in soup.find_all(["div", "td", "p", "span"]):
             text = tag.get_text(strip=True)
-            # Buscar patrones específicos en HTML
-            if any(keyword in text.lower() for keyword in ["beneficiario", "yapero", "destinatario", "empresa", "comerciante"]):
-                match = re.search(r"(?:beneficiario|yapero|destinatario|empresa|comerciante)\s*[:\-]?\s*([^\n]{2,80})", text, re.IGNORECASE)
+            if "nombre del beneficiario" in text.lower():
+                match = re.search(r"nombre\s+del\s+beneficiario\s*[:\-]?\s*([^\n]{2,80})", text, re.IGNORECASE)
+                if match:
+                    comercio = re.sub(r"\s+", " ", match.group(1)).strip(" .")
+                    if comercio and len(comercio) > 1 and comercio.lower() != "desconocido":
+                        return comercio
+
+        # PRIORIDAD 2: Buscar otros beneficiarios/destinatarios
+        for tag in soup.find_all(["div", "td", "p", "span"]):
+            text = tag.get_text(strip=True)
+            if any(keyword in text.lower() for keyword in ["destinatario", "empresa", "comerciante", "beneficiario"]):
+                match = re.search(r"(?:destinatario|empresa|comerciante|beneficiario)\s*[:\-]?\s*([^\n]{2,80})", text, re.IGNORECASE)
                 if match:
                     comercio = re.sub(r"\s+", " ", match.group(1)).strip(" .")
                     if comercio and len(comercio) > 1:
                         return comercio
 
-        # Buscar en atributos de datos
+        # PRIORIDAD 3: Buscar en atributos de datos
         for tag in soup.find_all(True):
             for attr in ["data-name", "data-recipient", "data-merchant"]:
                 if tag.has_attr(attr):
