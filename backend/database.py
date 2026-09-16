@@ -97,6 +97,19 @@ def init_db():
             )
         """)
 
+        # Crear tabla monthly_summary (historial de gastos mensuales)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS monthly_summary (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                month INTEGER NOT NULL,
+                total_gasto REAL NOT NULL,
+                creado_en TEXT NOT NULL,
+                UNIQUE(user_id, year, month)
+            )
+        """)
+
 
 def gasto_ya_existe(email_id: str, user_id: str = "legacy-user") -> bool:
     """Verifica si un gasto ya existe."""
@@ -605,3 +618,35 @@ def obtener_insights(user_id: str = "legacy-user"):
             'limite_mensual': limite,
             'progreso_limite': round(progreso_limite, 1) if progreso_limite else None,
         }
+
+
+def guardar_resumen_mensual(user_id: str, year: int, month: int, total_gasto: float):
+    """Guarda el resumen de gasto mensual en monthly_summary."""
+    with get_cursor() as cur:
+        cur.execute(
+            """INSERT INTO monthly_summary (user_id, year, month, total_gasto, creado_en)
+               VALUES (%s, %s, %s, %s, %s)
+               ON CONFLICT (user_id, year, month) DO UPDATE
+               SET total_gasto = %s, creado_en = %s""",
+            (user_id, year, month, total_gasto, datetime.now().isoformat(), total_gasto, datetime.now().isoformat())
+        )
+        print(f"✅ Resumen mensual guardado: {user_id} - {year}/{month} - S/ {total_gasto:.2f}")
+
+
+def obtener_historial_mensual(user_id: str):
+    """Obtiene el historial de gastos mensuales de un usuario."""
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT year, month, total_gasto, creado_en FROM monthly_summary WHERE user_id = %s ORDER BY year DESC, month DESC",
+            (user_id,)
+        )
+        rows = cur.fetchall()
+        return [
+            {
+                'year': row[0],
+                'month': row[1],
+                'total_gasto': row[2],
+                'creado_en': row[3]
+            }
+            for row in rows
+        ]

@@ -755,6 +755,7 @@
         <div class="toggle" aria-label="Selector de período">
           <button id="btn-dia" class="active" onclick="cambiarVista('dia')">Día</button>
           <button id="btn-semana" onclick="cambiarVista('semana')">Semana</button>
+          <button id="btn-mes" onclick="cambiarVista('mes')">Mes</button>
         </div>
       </div>
       <div class="total-value" id="total-valor">S/ 0.00</div>
@@ -1484,6 +1485,7 @@
     vistaActual = vista;
     document.getElementById("btn-dia").classList.toggle("active", vista === "dia");
     document.getElementById("btn-semana").classList.toggle("active", vista === "semana");
+    document.getElementById("btn-mes").classList.toggle("active", vista === "mes");
     cargarDatos();
   }
 
