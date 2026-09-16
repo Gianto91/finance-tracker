@@ -1594,6 +1594,10 @@
       }
       cerrarModal();
       cargarDatos();
+      // Actualizar gráficos si estamos en estadísticas
+      if (document.getElementById("estadisticas").style.display !== "none") {
+        setTimeout(() => actualizarGraficos(), 100);
+      }
     } catch (error) {
       alert("Error: " + error.message);
     }
