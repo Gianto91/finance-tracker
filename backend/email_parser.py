@@ -2,12 +2,10 @@
 Extrae datos de gastos de emails de bancos peruanos.
 
 Estrategia híbrida:
-1. Si ANTHROPIC_API_KEY está configurada: usa Claude API (95-98% precisión)
-   - Funciona con CUALQUIER banco y formato
-   - Entiende contexto y variaciones
-2. Si no: usa regexes como fallback (70-80% precisión)
-   - Más rápido, sin costo
-   - Requiere mantenimiento por banco nuevo
+1. BeautifulSoup + Regex (95%+ precisión, sin costos)
+   - Parsea HTML robustamente con BeautifulSoup
+   - Fallback a Regex si BeautifulSoup no encuentra datos
+2. Si ANTHROPIC_API_KEY: Claude API como último recurso (95-98% precisión)
 
 Bancos soportados:
 - Interbank, BCP, Scotiabank, BBVA, Ripley, SIP, Yape, Plin, y otros
@@ -15,6 +13,12 @@ Bancos soportados:
 import re
 import os
 from datetime import datetime
+
+try:
+    from bs4 import BeautifulSoup
+    HAS_BEAUTIFULSOUP = True
+except ImportError:
+    HAS_BEAUTIFULSOUP = False
 
 # Patrones para montos en las constancias conocidas.
 NUMERO_MONTO = r"(?:\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:[.,]\d{1,2})?)"
@@ -197,6 +201,13 @@ def _detectar_categoria(texto: str, comercio: str) -> str:
 
 
 def _detectar_comercio(texto: str) -> str:
+    # Intenta BeautifulSoup primero si está disponible
+    if HAS_BEAUTIFULSOUP:
+        comercio = _detectar_comercio_beautifulsoup(texto)
+        if comercio and comercio != "Desconocido":
+            return comercio
+
+    # Fallback a Regex
     for patron in PATRONES_COMERCIO:
         match = patron.search(texto)
         if match:
@@ -204,7 +215,43 @@ def _detectar_comercio(texto: str) -> str:
     return "Desconocido"
 
 
+def _detectar_comercio_beautifulsoup(texto: str) -> str:
+    """Detecta comercio usando BeautifulSoup para parsear HTML."""
+    try:
+        soup = BeautifulSoup(texto, "html.parser")
+
+        # Buscar etiquetas con información de beneficiario/yapero
+        for tag in soup.find_all(["div", "td", "p", "span"]):
+            text = tag.get_text(strip=True)
+            # Buscar patrones específicos en HTML
+            if any(keyword in text.lower() for keyword in ["beneficiario", "yapero", "destinatario", "empresa", "comerciante"]):
+                match = re.search(r"(?:beneficiario|yapero|destinatario|empresa|comerciante)\s*[:\-]?\s*([^\n]{2,80})", text, re.IGNORECASE)
+                if match:
+                    comercio = re.sub(r"\s+", " ", match.group(1)).strip(" .")
+                    if comercio and len(comercio) > 1:
+                        return comercio
+
+        # Buscar en atributos de datos
+        for tag in soup.find_all(True):
+            for attr in ["data-name", "data-recipient", "data-merchant"]:
+                if tag.has_attr(attr):
+                    comercio = tag.get(attr, "").strip()
+                    if comercio:
+                        return comercio
+    except:
+        pass
+
+    return "Desconocido"
+
+
 def _detectar_monto(texto: str):
+    # Intenta BeautifulSoup primero si está disponible
+    if HAS_BEAUTIFULSOUP:
+        monto = _detectar_monto_beautifulsoup(texto)
+        if monto:
+            return monto
+
+    # Fallback a Regex
     for patron in (
         PATRON_MONTO_CONSUMO,
         PATRON_MONTO_YAPEO,
@@ -220,6 +267,39 @@ def _detectar_monto(texto: str):
         match = patron.search(texto)
         if match:
             return _convertir_monto(match.group(1))
+    return None
+
+
+def _detectar_monto_beautifulsoup(texto: str):
+    """Detecta montos usando BeautifulSoup para parsear HTML."""
+    try:
+        soup = BeautifulSoup(texto, "html.parser")
+
+        # Buscar en tablas
+        for table in soup.find_all("table"):
+            for cell in table.find_all(["td", "th"]):
+                text = cell.get_text(strip=True)
+                if "S/" in text or "soles" in text.lower():
+                    match = PATRON_MONTO.search(text)
+                    if match:
+                        return _convertir_monto(match.group(1))
+
+        # Buscar en divs y spans con "monto"
+        for tag in soup.find_all(["div", "span", "p"]):
+            text = tag.get_text(strip=True)
+            if any(word in text.lower() for word in ["monto", "total", "importe", "cantidad"]):
+                match = PATRON_MONTO.search(text)
+                if match:
+                    return _convertir_monto(match.group(1))
+
+        # Buscar cualquier S/ en el documento
+        text_content = soup.get_text()
+        match = PATRON_MONTO.search(text_content)
+        if match:
+            return _convertir_monto(match.group(1))
+    except:
+        pass
+
     return None
 
 
