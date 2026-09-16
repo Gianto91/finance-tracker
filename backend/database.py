@@ -243,6 +243,9 @@ def actualizar_gasto_por_id(gasto_id, user_id, monto=None, comercio=None, catego
             valores.append(user_id)
             query = f"UPDATE gastos SET {', '.join(campos)} WHERE id = %s AND user_id = %s"
             cur.execute(query, valores)
+            print(f"✅ Gasto {gasto_id} actualizado para usuario {user_id}")
+        else:
+            print(f"⚠️ No hay campos para actualizar en gasto {gasto_id}")
 
 
 def marcar_email_ignorado(email_id, user_id: str = "legacy-user"):
