@@ -1581,7 +1581,7 @@
       if (id) {
         const res = await fetch(`${API}/api/gastos/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...obtenerHeadersConAuth(), "Content-Type": "application/json" },
           body: JSON.stringify({ monto, comercio, categoria })
         });
         if (!res.ok) throw new Error("No se pudo editar");
