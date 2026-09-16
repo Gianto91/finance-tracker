@@ -1595,7 +1595,8 @@
       cerrarModal();
       cargarDatos();
       // Actualizar gráficos si estamos en estadísticas
-      if (document.getElementById("estadisticas").style.display !== "none") {
+      const tabEstadisticas = document.getElementById("tab-estadisticas");
+      if (tabEstadisticas && tabEstadisticas.style.display !== "none") {
         setTimeout(() => actualizarGraficos(), 100);
       }
     } catch (error) {
