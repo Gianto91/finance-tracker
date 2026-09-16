@@ -1725,7 +1725,9 @@
   }
 
   function actualizarGraficos() {
-    fetch(`${API}/api/gastos/todos`)
+    fetch(`${API}/api/gastos/todos`, {
+      headers: obtenerHeadersConAuth()
+    })
       .then(r => r.json())
       .then(gastos => {
         const porCategoria = {};
