@@ -510,7 +510,7 @@ def auth_logout():
 
 @app.post("/api/profile/photo")
 async def upload_profile_photo(request: Request):
-    """Subir foto de perfil del usuario."""
+    """Subir foto de perfil del usuario (almacenado en BD como base64)."""
     user_id = obtener_user_id(request)
     if not user_id or user_id == "legacy-user":
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -522,25 +522,15 @@ async def upload_profile_photo(request: Request):
         if not file:
             raise HTTPException(status_code=400, detail="No se proporcionó archivo")
 
-        # Crear directorio si no existe
-        import os
-        photo_dir = "static/images/profile-photos"
-        os.makedirs(photo_dir, exist_ok=True)
-
-        # Guardar archivo con nombre del usuario
-        filename = f"{user_id}.jpg"
-        filepath = os.path.join(photo_dir, filename)
-
-        # Leer y guardar el archivo
+        # Leer archivo y convertir a base64
+        import base64
         contents = await file.read()
-        with open(filepath, "wb") as f:
-            f.write(contents)
+        photo_base64 = base64.b64encode(contents).decode('utf-8')
 
-        # Guardar URL en BD
-        photo_url = f"/images/profile-photos/{filename}"
-        database.update_profile_photo(user_id, photo_url)
+        # Guardar base64 directamente en BD
+        database.update_profile_photo(user_id, f"data:image/jpeg;base64,{photo_base64}")
 
-        return {"status": "ok", "photo_url": photo_url}
+        return {"status": "ok", "photo_url": f"data:image/jpeg;base64,{photo_base64[:50]}..."}
     except Exception as e:
         print(f"❌ Error al subir foto: {e}")
         raise HTTPException(status_code=500, detail="Error al subir foto")
