@@ -449,6 +449,54 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
+  .gasto-swipe-container {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+
+  .gasto-swipe-content {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 12px;
+    background: var(--surface);
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+
+  .gasto-actions-left {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 70px;
+    background: #f87171;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    z-index: 0;
+  }
+
+  .gasto-actions-right {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 70px;
+    background: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    z-index: 0;
+  }
+
   .gasto-row {
     display: flex;
     justify-content: space-between;
@@ -1230,6 +1278,48 @@
     return mapping[categoria] || mapping.Otros;
   }
 
+  function initGastoSwipes() {
+    const containers = document.querySelectorAll('.gasto-swipe-container');
+    containers.forEach(container => {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let currentX = 0;
+
+      container.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        currentX = 0;
+      });
+
+      container.addEventListener('touchmove', (e) => {
+        const diff = e.touches[0].clientX - touchStartX;
+        const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+
+        // Si el swipe es más vertical que horizontal, ignorar
+        if (diffY > Math.abs(diff)) return;
+
+        e.preventDefault();
+        currentX = Math.max(-70, Math.min(70, diff));
+        const content = container.querySelector('.gasto-swipe-content');
+        content.style.transform = `translateX(${currentX}px)`;
+      });
+
+      container.addEventListener('touchend', () => {
+        const content = container.querySelector('.gasto-swipe-content');
+        if (currentX < -35) {
+          // Swipe izquierda - mostrar borrar
+          content.style.transform = 'translateX(-70px)';
+        } else if (currentX > 35) {
+          // Swipe derecha - mostrar editar
+          content.style.transform = 'translateX(70px)';
+        } else {
+          // Volver a la posición original
+          content.style.transform = 'translateX(0)';
+        }
+      });
+    });
+  }
+
   function renderLista() {
     const cont = document.getElementById("lista-gastos-mov") || document.getElementById("lista-gastos");
     if (!gastosActuales.length) {
@@ -1257,19 +1347,25 @@
       return `
         <div class="fecha-separator">${fechaFormato}</div>
         ${gastos.map(g => `
-          <div class="gasto-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <div class="gasto-main" style="flex:1;">
-              <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
-              <div class="gasto-info">
-                <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
-                <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
-                <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+          <div class="gasto-swipe-container" data-id="${g.id}" data-comercio="${g.comercio}" data-monto="${g.monto}" data-categoria="${g.categoria}">
+            <div class="gasto-actions-left" onclick="eliminarGasto(${g.id})">
+              <svg style="width:20px; height:20px;" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>
+            </div>
+            <div class="gasto-row gasto-swipe-content">
+              <div class="gasto-main" style="flex:1;">
+                <div class="gasto-icon">${getMovementIconSvg(g.categoria)}</div>
+                <div class="gasto-info">
+                  <div class="gasto-comercio">${mostrarComercio(g.comercio)}</div>
+                  <div class="gasto-meta">${g.categoria} · ${g.metodo}</div>
+                  <div class="gasto-fecha">${formatearFecha(g.fecha)}</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
               </div>
             </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <div class="gasto-monto">S/ ${g.monto.toFixed(2)}</div>
-              <button onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')" style="padding:6px 8px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3); border-radius:6px; color:var(--accent); cursor:pointer; font-size:11px; font-weight:600;">✏️</button>
-              <button onclick="eliminarGasto(${g.id})" style="padding:6px 8px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); border-radius:6px; color:var(--danger); cursor:pointer; font-size:11px; font-weight:600;">🗑️</button>
+            <div class="gasto-actions-right" onclick="abrirModal(${g.id}, '${g.comercio}', ${g.monto}, '${g.categoria}')">
+              <svg style="width:20px; height:20px;" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94m-5.87-5.87L15.73 3 21 8.27"/></svg>
             </div>
           </div>
         `).join("")}
@@ -1282,6 +1378,8 @@
         <span class="page-label">Página ${paginaActual} de ${paginas}</span>
         <button class="page-btn" onclick="cambiarPagina(1)" ${paginaActual === paginas ? "disabled" : ""}>Siguiente</button>
       </div>`;
+    // Inicializar swipes después de renderizar
+    setTimeout(() => initGastoSwipes(), 0);
   }
 
   function mostrarComercio(comercio) {
