@@ -1169,7 +1169,7 @@
   let chartsInstances = {};
 
   // Auth
-  async function verificarAutenticacion() {
+  function verificarAutenticacion() {
     const token = localStorage.getItem('jwt_token');
     const loginScreen = document.getElementById('login-screen');
     const appShell = document.querySelector('.app-shell');
@@ -1188,33 +1188,30 @@
         elementoNombre.textContent = nombreUsuario;
       }
 
-      // Cargar foto desde BD (reemplaza la de Gmail si existe foto personalizada)
-      try {
-        const response = await fetch('/api/profile', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const profile = await response.json();
-          if (profile.profile_photo_url) {
-            localStorage.setItem('profile_photo_url', profile.profile_photo_url);
-          }
-        }
-      } catch (e) {
-        console.error('Error al cargar foto de perfil:', e);
-      }
-
-      // Mostrar foto en header
+      // Mostrar foto en header (desde localStorage, se carga después en cargarPerfilUsuario)
       const fotoUrl = localStorage.getItem('profile_photo_url');
       const headerFoto = document.getElementById('header-profile-photo');
       if (headerFoto) {
         if (fotoUrl && fotoUrl.startsWith('http')) {
           headerFoto.src = fotoUrl;
-        } else if (fotoUrl) {
+        } else if (fotoUrl && fotoUrl.startsWith('data:')) {
           headerFoto.src = fotoUrl;
         } else {
           headerFoto.src = `https://ui-avatars.com/api/?name=${nombreUsuario}&background=E64A19&color=fff`;
         }
       }
+
+      // Cargar foto desde BD en background (sin bloquear)
+      fetch('/api/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(r => r.ok && r.json()).then(profile => {
+        if (profile && profile.profile_photo_url) {
+          localStorage.setItem('profile_photo_url', profile.profile_photo_url);
+          const headerFoto = document.getElementById('header-profile-photo');
+          if (headerFoto) headerFoto.src = profile.profile_photo_url;
+        }
+      }).catch(() => {});
+
       return true;
     }
   }
