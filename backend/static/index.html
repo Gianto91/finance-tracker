@@ -658,6 +658,31 @@
     line-height: 1;
   }
 
+  .pull-to-refresh-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    animation: spin 1s linear infinite;
+  }
+
+  .pull-to-refresh-indicator.show {
+    display: flex;
+  }
+
+  @keyframes spin {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to { transform: translateX(-50%) rotate(360deg); }
+  }
+
   .tab-content {
     display: none;
   }
@@ -1097,6 +1122,10 @@
       <p style="margin:0 0 20px; font-size:14px; color:var(--text-soft); line-height:1.6;">Tu sesión ha expirado. Por favor, vuelve a iniciar sesión para continuar usando Hormiguita.</p>
       <button onclick="cerrarSesion()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px;">Iniciar sesión</button>
     </div>
+  </div>
+
+  <div class="pull-to-refresh-indicator">
+    <svg style="width:24px; height:24px;" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 0 0 14.85-3.36M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64"></path></svg>
   </div>
 
   <div class="footer-nav-center" onclick="abrirModalCrear()">+</div>
@@ -2150,37 +2179,36 @@
   let touchStartY = 0;
   let isRefreshing = false;
 
-  function setupPullToRefresh() {
-    const appShell = document.querySelector('.app-shell');
-    if (!appShell) return;
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+      touchStartY = e.touches[0].clientY;
+    }
+  }, false);
 
-    appShell.addEventListener('touchstart', (e) => {
-      const activeTab = document.querySelector('.tab-content.active');
-      const scrollTop = activeTab ? activeTab.scrollTop : window.scrollY;
-      if (scrollTop === 0) {
-        touchStartY = e.touches[0].clientY;
-      }
-    }, false);
+  document.addEventListener('touchmove', (e) => {
+    if (isRefreshing || window.scrollY !== 0) return;
 
-    appShell.addEventListener('touchmove', (e) => {
-      if (isRefreshing) return;
-      const activeTab = document.querySelector('.tab-content.active');
-      const scrollTop = activeTab ? activeTab.scrollTop : window.scrollY;
+    const touchY = e.touches[0].clientY;
+    const diff = touchY - touchStartY;
+    const indicator = document.querySelector('.pull-to-refresh-indicator');
 
-      if (scrollTop !== 0) return;
+    if (diff > 0) {
+      indicator.classList.add('show');
+    }
 
-      const touchY = e.touches[0].clientY;
-      const diff = touchY - touchStartY;
+    if (diff > 80) { // 80px swipe down
+      e.preventDefault();
+      isRefreshing = true;
+      if (indicator) indicator.classList.remove('show');
+      cargarDatos();
+      setTimeout(() => { isRefreshing = false; }, 1000);
+    }
+  }, { passive: false });
 
-      if (diff > 80) { // 80px swipe down
-        isRefreshing = true;
-        cargarDatos();
-        setTimeout(() => { isRefreshing = false; }, 1000);
-      }
-    }, false);
-  }
-
-  setupPullToRefresh();
+  document.addEventListener('touchend', () => {
+    const indicator = document.querySelector('.pull-to-refresh-indicator');
+    if (indicator) indicator.classList.remove('show');
+  }, false);
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
