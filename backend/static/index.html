@@ -1929,21 +1929,34 @@
     }
   }
 
-  function cargarPerfilUsuario() {
+  async function cargarPerfilUsuario() {
     const nombre = localStorage.getItem('user_name') || 'Usuario';
     const email = localStorage.getItem('user_email') || 'email@ejemplo.com';
-    const fotoUrl = localStorage.getItem('profile_photo_url');
 
     document.getElementById('user-name-display').textContent = nombre;
     document.getElementById('user-email-display').textContent = email;
 
+    // Cargar foto desde BD primero
+    try {
+      const response = await fetch('/api/profile', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
+      });
+      if (response.ok) {
+        const profile = await response.json();
+        localStorage.setItem('profile_photo_url', profile.profile_photo_url || '');
+      }
+    } catch (e) {
+      console.error('Error al cargar perfil:', e);
+    }
+
+    const fotoUrl = localStorage.getItem('profile_photo_url');
     const fotoElement = document.getElementById('profile-photo');
     const headerFotoElement = document.getElementById('header-profile-photo');
     let fotoFinal = '';
-    if (fotoUrl && fotoUrl.startsWith('http')) {
+    if (fotoUrl && fotoUrl.startsWith('data:')) {
+      fotoFinal = fotoUrl; // Foto personalizada (base64)
+    } else if (fotoUrl && fotoUrl.startsWith('http')) {
       fotoFinal = fotoUrl; // Foto de Gmail
-    } else if (fotoUrl) {
-      fotoFinal = fotoUrl; // Foto personalizada
     } else {
       fotoFinal = `https://ui-avatars.com/api/?name=${nombre}&background=E64A19&color=fff`;
     }

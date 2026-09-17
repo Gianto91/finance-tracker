@@ -508,6 +508,25 @@ def auth_logout():
     return {"status": "ok", "message": "Sesión cerrada. Elimina el token del cliente."}
 
 
+@app.get("/api/profile")
+def get_profile(request: Request):
+    """Obtener perfil del usuario incluyendo foto de BD."""
+    user_id = obtener_user_id(request)
+    if not user_id or user_id == "legacy-user":
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    user = database.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return {
+        "id": user["id"],
+        "nombre": user["nombre"],
+        "email": user["email"],
+        "profile_photo_url": user.get("profile_photo_url", "")
+    }
+
+
 @app.post("/api/profile/photo")
 async def upload_profile_photo(request: Request):
     """Subir foto de perfil del usuario (almacenado en BD como base64)."""
