@@ -743,10 +743,7 @@
         </div>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
-        <button onclick="location.reload()" aria-label="Refrescar página" style="background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/></svg>
-        </button>
-        <button onclick="cerrarSesion()" aria-label="Cerrar sesión" style="background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; font-size: 13px; text-decoration: underline;">Salir</button>
+        <img id="header-profile-photo" src="" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid var(--accent);" onclick="cambiarTab('perfil')">
       </div>
     </header>
 
@@ -763,10 +760,6 @@
     </section>
 
     <div class="actions">
-      <button class="btn btn-secondary" onclick="revisarAhora(this)">
-        <svg style="width:18px; height:18px; stroke-width:1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 0 0 14.85-3.36M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64"></path></svg>
-        <span>Revisar</span>
-      </button>
       <button class="btn btn-primary" onclick="abrirModalCrear()">
         <span>+ Manual</span>
       </button>
@@ -1088,6 +1081,18 @@
       const elementoNombre = document.getElementById('nombre-usuario');
       if (elementoNombre) {
         elementoNombre.textContent = nombreUsuario;
+      }
+      // Mostrar foto en header
+      const fotoUrl = localStorage.getItem('profile_photo_url');
+      const headerFoto = document.getElementById('header-profile-photo');
+      if (headerFoto) {
+        if (fotoUrl && fotoUrl.startsWith('http')) {
+          headerFoto.src = fotoUrl;
+        } else if (fotoUrl) {
+          headerFoto.src = fotoUrl;
+        } else {
+          headerFoto.src = `https://ui-avatars.com/api/?name=${nombreUsuario}&background=E64A19&color=fff`;
+        }
       }
       return true;
     }
@@ -1778,13 +1783,17 @@
     document.getElementById('user-email-display').textContent = email;
 
     const fotoElement = document.getElementById('profile-photo');
+    const headerFotoElement = document.getElementById('header-profile-photo');
+    let fotoFinal = '';
     if (fotoUrl && fotoUrl.startsWith('http')) {
-      fotoElement.src = fotoUrl; // Foto de Gmail
+      fotoFinal = fotoUrl; // Foto de Gmail
     } else if (fotoUrl) {
-      fotoElement.src = fotoUrl; // Foto personalizada
+      fotoFinal = fotoUrl; // Foto personalizada
     } else {
-      fotoElement.src = `https://ui-avatars.com/api/?name=${nombre}&background=E64A19&color=fff`;
+      fotoFinal = `https://ui-avatars.com/api/?name=${nombre}&background=E64A19&color=fff`;
     }
+    fotoElement.src = fotoFinal;
+    headerFotoElement.src = fotoFinal;
 
     // Cargar bancos soportados
     const bancosLista = document.getElementById('bancos-list');
@@ -2010,6 +2019,27 @@
   function mostrarModalSesionExpirada() {
     document.getElementById('modal-sesion-expirada').style.display = 'flex';
   }
+
+  // Pull-to-refresh functionality
+  let touchStartY = 0;
+  let isRefreshing = false;
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+      touchStartY = e.touches[0].clientY;
+    }
+  }, false);
+
+  document.addEventListener('touchmove', (e) => {
+    if (isRefreshing || window.scrollY !== 0) return;
+    const touchY = e.touches[0].clientY;
+    const diff = touchY - touchStartY;
+    if (diff > 80) { // 80px swipe down
+      isRefreshing = true;
+      cargarDatos();
+      setTimeout(() => { isRefreshing = false; }, 1000);
+    }
+  }, false);
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
