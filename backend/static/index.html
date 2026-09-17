@@ -1280,7 +1280,7 @@
     status.textContent = "";
   }
 
-  function renderDailyChart(gastos) {
+  function renderDailyChart(gastos, forceWeekView = false) {
     const cont = document.getElementById("daily-chart");
     if (!cont) return;
     const grupos = {};
@@ -1292,7 +1292,8 @@
     });
 
     let dias;
-    if (vistaActual === "semana") {
+    // En estadísticas o si se fuerza, mostrar solo los últimos 7 días
+    if (forceWeekView || vistaActual === "semana") {
       const ahora = new Date();
       const lunes = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7));
       dias = Array.from({ length: 7 }, (_, indice) => {
@@ -1741,7 +1742,7 @@
         const datos = Object.values(porCategoria);
         const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
-        renderDailyChart(gastos);
+        renderDailyChart(gastos, true);
         dibujarGraficoPie(labels, datos, colores);
         dibujarGraficoBar(labels, datos, colores);
         dibujarGraficoLinea(gastos);
