@@ -867,7 +867,7 @@
       </div>
 
       <div class="chart-card" style="margin-top: 18px;">
-        <h2 class="chart-title">Tendencia (Últimos 30 días)</h2>
+        <h2 class="chart-title">Tendencia (Últimos 7 días)</h2>
         <div style="margin-top: 18px;">
           <canvas id="chartLine" style="max-width: 100%; max-height: 300px;"></canvas>
         </div>
@@ -1794,9 +1794,9 @@
     });
 
     const ahora = new Date();
-    const hace30 = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const hace7 = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dias = [];
-    for (let d = new Date(hace30); d <= ahora; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(hace7); d <= ahora; d.setDate(d.getDate() + 1)) {
       dias.push(new Date(d));
     }
 
@@ -1820,7 +1820,16 @@
       options: {
         responsive: true,
         maintainAspectRatio: true,
-        plugins: { legend: { labels: { color: "#f1f3f5" } } },
+        plugins: {
+          legend: { labels: { color: "#f1f3f5" } },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `S/ ${context.parsed.y.toFixed(2)}`;
+              }
+            }
+          }
+        },
         scales: { y: { ticks: { color: "#f1f3f5" } }, x: { ticks: { color: "#f1f3f5" } } }
       }
     });
