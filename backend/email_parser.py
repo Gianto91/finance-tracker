@@ -125,7 +125,7 @@ PALABRAS_METODO = {
 # Categorías disponibles para el dashboard.
 CATEGORIAS = [
     "Comida", "Transporte", "Servicios", "Hogar", "Salud",
-    "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Transferencias", "Otros",
+    "Entretenimiento", "Suscripciones", "Impuestos", "Finanzas", "Mascotas", "Transferencias", "Otros",
 ]
 
 # Palabras clave -> categoría. Se revisan en este orden.
