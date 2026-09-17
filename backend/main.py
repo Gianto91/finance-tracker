@@ -480,6 +480,8 @@ def auth_callback(code: str):
 
     # Retornar HTML que guarda el token y nombre en localStorage y redirige al dashboard
     nombre = user_info.get("name", "Usuario").split()[0] if user_info else "Usuario"
+    email = user_info.get("email", "")
+    picture = user_info.get("picture", "")
     html = f"""
     <html>
         <head>
@@ -490,6 +492,8 @@ def auth_callback(code: str):
                 localStorage.setItem('jwt_token', '{jwt_token}');
                 localStorage.setItem('user_name', '{nombre}');
                 localStorage.setItem('user_id', '{user_id}');
+                localStorage.setItem('user_email', '{email}');
+                localStorage.setItem('profile_photo_url', '{picture}');
                 window.location.href = '/';
             </script>
         </body>
@@ -540,6 +544,22 @@ async def upload_profile_photo(request: Request):
     except Exception as e:
         print(f"❌ Error al subir foto: {e}")
         raise HTTPException(status_code=500, detail="Error al subir foto")
+
+
+@app.post("/api/user/delete")
+def delete_user_account(request: Request):
+    """Elimina la cuenta del usuario y todos sus datos."""
+    user_id = obtener_user_id(request)
+    if not user_id or user_id == "legacy-user":
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        database.delete_user(user_id)
+        print(f"✅ Cuenta eliminada: {user_id}")
+        return {"status": "ok", "message": "Cuenta eliminada"}
+    except Exception as e:
+        print(f"❌ Error al eliminar cuenta: {e}")
+        raise HTTPException(status_code=500, detail="Error al eliminar cuenta")
 
 
 @app.post("/api/auth/migrate-legacy")

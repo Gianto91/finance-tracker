@@ -943,10 +943,59 @@
       <header class="topbar">
         <h1>Perfil</h1>
       </header>
-      <div style="padding: 20px; text-align: center; color: var(--muted);">
-        <p>Sección en desarrollo</p>
+      <div style="padding: 20px;">
+        <!-- Foto y info del usuario -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px; cursor: pointer;" onclick="document.getElementById('photo-input').click()">
+            <img id="profile-photo" src="" alt="Foto de perfil" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">
+            <div style="position: absolute; bottom: 0; right: 0; background: var(--accent); border-radius: 50%; padding: 8px; display: flex; align-items: center; justify-content: center;">
+              <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+          </div>
+          <input type="file" id="photo-input" accept="image/*" style="display: none;" onchange="subirFotoPerfil(event)">
+          <h2 id="user-name-display" style="margin: 10px 0 5px; font-size: 20px;">Nombre</h2>
+          <p id="user-email-display" style="margin: 0; color: var(--text-soft); font-size: 14px;">email@ejemplo.com</p>
+        </div>
+
+        <!-- Configuraciones -->
+        <div style="background: var(--surface); border-radius: 14px; padding: 15px; margin-bottom: 20px;">
+          <h3 style="margin: 0 0 15px; font-size: 14px; color: var(--muted); text-transform: uppercase;">⚙️ Configuraciones</h3>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.08);">
+            <span>Modo oscuro</span>
+            <input type="checkbox" id="dark-mode-toggle" style="width: 40px; height: 24px; cursor: pointer;" onchange="toggleDarkMode()">
+          </div>
+        </div>
+
+        <!-- Bancos conectados -->
+        <div style="background: var(--surface); border-radius: 14px; padding: 15px; margin-bottom: 20px;">
+          <h3 style="margin: 0 0 15px; font-size: 14px; color: var(--muted); text-transform: uppercase;">🔗 Bancos conectados</h3>
+          <div id="bancos-list" style="display: grid; gap: 10px;">
+            <!-- Se llena con JS -->
+          </div>
+          <button onclick="solicitarBanco()" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(230, 74, 25, 0.2); border: 1px solid var(--accent); border-radius: 10px; color: var(--accent); cursor: pointer; font-weight: 600;">+ Solicitar banco</button>
+        </div>
+
+        <!-- Cerrar sesión -->
+        <button onclick="cerrarSesion()" style="width: 100%; padding: 14px; background: rgba(230, 74, 25, 0.15); border: 1px solid var(--accent); border-radius: 10px; color: var(--accent); cursor: pointer; font-weight: 600; margin-bottom: 15px;">🚪 Cerrar sesión</button>
+
+        <!-- Eliminar cuenta -->
+        <button onclick="abrirModalEliminarCuenta()" style="width: 100%; padding: 14px; background: rgba(248, 113, 113, 0.15); border: 1px solid #f87171; border-radius: 10px; color: #f87171; cursor: pointer; font-weight: 600;">❌ Eliminar cuenta</button>
       </div>
     </div><!-- FIN TAB PERFIL -->
+
+    <!-- Modal eliminar cuenta -->
+    <div id="modal-eliminar-cuenta" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; padding:20px; display:flex; align-items:center; justify-content:center;">
+      <div style="background:#1a1a1a; border-radius:20px; padding:30px; max-width:350px; border:1px solid #f87171; text-align:center;">
+        <h3 style="margin:0 0 10px; color:#f87171; font-size:20px;">⚠️ Eliminar cuenta</h3>
+        <p style="color:var(--text-soft); margin:0 0 20px;">Esta acción es irreversible. Se eliminarán todos tus gastos y datos.</p>
+        <p style="color:var(--muted); font-size:13px; margin:0 0 20px;">Escribe tu email para confirmar:</p>
+        <input type="email" id="confirm-email" placeholder="tu@email.com" style="width:100%; padding:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text); margin-bottom:15px;">
+        <div style="display:flex; gap:10px;">
+          <button onclick="cerrarModalEliminar()" style="flex:1; padding:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; color:var(--text); cursor:pointer;">Cancelar</button>
+          <button onclick="confirmarEliminarCuenta()" style="flex:1; padding:12px; background:#f87171; border:none; border-radius:10px; color:white; cursor:pointer; font-weight:600;">Eliminar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="modal-editar" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; padding:20px;">
@@ -1048,6 +1097,8 @@
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('profile_photo_url');
     localStorage.removeItem('migracion_legacy_ejecutada');
     localStorage.removeItem('hormiguita_beta_shown');
     // Limpiar todos los flags de beta por fecha
@@ -1713,6 +1764,127 @@
     } else if (tab === "movimientos") {
       vistaActual = "todos";
       cargarDatos();
+    } else if (tab === "perfil") {
+      cargarPerfilUsuario();
+    }
+  }
+
+  function cargarPerfilUsuario() {
+    const nombre = localStorage.getItem('user_name') || 'Usuario';
+    const email = localStorage.getItem('user_email') || 'email@ejemplo.com';
+    const fotoUrl = localStorage.getItem('profile_photo_url');
+
+    document.getElementById('user-name-display').textContent = nombre;
+    document.getElementById('user-email-display').textContent = email;
+
+    const fotoElement = document.getElementById('profile-photo');
+    if (fotoUrl && fotoUrl.startsWith('http')) {
+      fotoElement.src = fotoUrl; // Foto de Gmail
+    } else if (fotoUrl) {
+      fotoElement.src = fotoUrl; // Foto personalizada
+    } else {
+      fotoElement.src = `https://ui-avatars.com/api/?name=${nombre}&background=E64A19&color=fff`;
+    }
+
+    // Cargar bancos soportados
+    const bancosLista = document.getElementById('bancos-list');
+    const bancosDisponibles = [
+      { nombre: 'BCP', activo: true },
+      { nombre: 'Interbank', activo: true },
+      { nombre: 'BBVA', activo: true },
+      { nombre: 'Ripley', activo: true },
+      { nombre: 'Yape', activo: true },
+      { nombre: 'Plin', activo: true },
+      { nombre: 'SIP', activo: true },
+      { nombre: 'Ligo', activo: true }
+    ];
+
+    bancosLista.innerHTML = bancosDisponibles.map(b => `
+      <div style="padding:10px; background:rgba(230,74,25,0.1); border-radius:10px; display:flex; align-items:center; justify-content:space-between;">
+        <span>${b.nombre}</span>
+        <span style="color:var(--text-soft); font-size:12px;">✓ Conectado</span>
+      </div>
+    `).join('');
+
+    // Cargar preferencia de tema
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    darkModeToggle.checked = localStorage.getItem('dark-mode') !== 'false';
+  }
+
+  async function subirFotoPerfil(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/profile/photo', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('profile_photo_url', data.photo_url);
+        document.getElementById('profile-photo').src = data.photo_url;
+      }
+    } catch (e) {
+      console.error('Error al subir foto:', e);
+      alert('Error al subir foto');
+    }
+  }
+
+  function toggleDarkMode() {
+    const toggle = document.getElementById('dark-mode-toggle');
+    const isDark = toggle.checked;
+    localStorage.setItem('dark-mode', isDark);
+    // Aquí podrías agregar CSS para cambiar tema
+    location.reload(); // Recargar para aplicar cambios
+  }
+
+  function solicitarBanco() {
+    alert('📧 Envía tu solicitud a: support@hormiguita.site\n\nIndica qué banco necesitas agregar.');
+  }
+
+  function abrirModalEliminarCuenta() {
+    document.getElementById('modal-eliminar-cuenta').style.display = 'flex';
+  }
+
+  function cerrarModalEliminar() {
+    document.getElementById('modal-eliminar-cuenta').style.display = 'none';
+    document.getElementById('confirm-email').value = '';
+  }
+
+  async function confirmarEliminarCuenta() {
+    const email = document.getElementById('confirm-email').value;
+    const userEmail = localStorage.getItem('user_email');
+
+    if (email !== userEmail) {
+      alert('❌ Email incorrecto');
+      return;
+    }
+
+    if (!confirm('⚠️ Esta acción es irreversible. ¿Deseas continuar?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/delete', {
+        method: 'POST',
+        headers: obtenerHeadersConAuth()
+      });
+
+      if (response.ok) {
+        alert('✅ Cuenta eliminada correctamente');
+        cerrarSesion();
+      } else {
+        alert('❌ Error al eliminar cuenta');
+      }
+    } catch (e) {
+      console.error('Error:', e);
+      alert('❌ Error al eliminar cuenta');
     }
   }
 

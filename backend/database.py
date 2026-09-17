@@ -420,6 +420,18 @@ def update_profile_photo(user_id: str, photo_url: str):
         cur.execute("UPDATE users SET profile_photo_url = %s WHERE id = %s", (photo_url, user_id))
 
 
+def delete_user(user_id: str):
+    """Elimina un usuario y todos sus gastos."""
+    with get_cursor() as cur:
+        # Eliminar gastos del usuario
+        cur.execute("DELETE FROM gastos WHERE user_id = %s", (user_id,))
+        # Eliminar resúmenes mensuales
+        cur.execute("DELETE FROM monthly_summary WHERE user_id = %s", (user_id,))
+        # Eliminar usuario
+        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        print(f"✅ Usuario {user_id} eliminado completamente")
+
+
 def _add_column_if_missing(column_name: str, column_type: str):
     """Agrega una columna a la tabla users si no existe. Cada columna en su propia transacción."""
     try:
