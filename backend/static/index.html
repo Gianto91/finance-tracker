@@ -1956,7 +1956,9 @@
       });
       if (response.ok) {
         const profile = await response.json();
-        localStorage.setItem('profile_photo_url', profile.profile_photo_url || '');
+        if (profile.profile_photo_url) {
+          localStorage.setItem('profile_photo_url', profile.profile_photo_url);
+        }
       }
     } catch (e) {
       console.error('Error al cargar perfil:', e);
