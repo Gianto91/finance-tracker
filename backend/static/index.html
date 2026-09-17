@@ -1741,6 +1741,7 @@
         const datos = Object.values(porCategoria);
         const colores = labels.map(cat => COLORES_CATEGORIA[CATEGORIAS.indexOf(cat)] || "#E64A19");
 
+        renderDailyChart(gastos);
         dibujarGraficoPie(labels, datos, colores);
         dibujarGraficoBar(labels, datos, colores);
         dibujarGraficoLinea(gastos);
