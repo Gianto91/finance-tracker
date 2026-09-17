@@ -526,11 +526,12 @@ async def upload_profile_photo(request: Request):
         import base64
         contents = await file.read()
         photo_base64 = base64.b64encode(contents).decode('utf-8')
+        photo_data_uri = f"data:image/jpeg;base64,{photo_base64}"
 
         # Guardar base64 directamente en BD
-        database.update_profile_photo(user_id, f"data:image/jpeg;base64,{photo_base64}")
+        database.update_profile_photo(user_id, photo_data_uri)
 
-        return {"status": "ok", "photo_url": f"data:image/jpeg;base64,{photo_base64[:50]}..."}
+        return {"status": "ok", "photo_url": photo_data_uri}
     except Exception as e:
         print(f"❌ Error al subir foto: {e}")
         raise HTTPException(status_code=500, detail="Error al subir foto")
