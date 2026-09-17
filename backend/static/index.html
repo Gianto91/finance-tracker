@@ -607,10 +607,30 @@
     border-top: 1px solid rgba(255,255,255,.08);
     border-radius: 18px 18px 0 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 4px;
     padding: 10px 12px 12px;
     backdrop-filter: blur(6px);
+  }
+
+  .footer-nav-center {
+    position: fixed;
+    left: 50%;
+    bottom: 80px;
+    transform: translateX(-50%);
+    width: 64px;
+    height: 64px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(230, 74, 25, 0.4);
+    font-size: 32px;
+    color: white;
+    font-weight: 300;
   }
 
   .nav-item {
@@ -807,7 +827,7 @@
       <div class="total-value" id="total-valor">S/ 0.00</div>
     </section>
 
-    <div class="actions">
+    <div class="actions" style="display: none;">
       <button class="btn btn-secondary" onclick="revisarAhora(this)">
         <svg style="width:18px; height:18px; stroke-width:1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 0 0 14.85-3.36M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64"></path></svg>
         <span>Revisar</span>
@@ -1078,6 +1098,8 @@
     </div>
   </div>
 
+  <div class="footer-nav-center" onclick="abrirModalCrear()">+</div>
+
   <nav class="footer-nav" aria-label="Navegación principal">
     <button class="nav-item active" onclick="cambiarTab('inicio')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
@@ -1091,6 +1113,7 @@
       </span>
       <span>Movimientos</span>
     </button>
+    <div style="flex: 1;"></div>
     <button class="nav-item" onclick="cambiarTab('estadisticas')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 20V8"/><path d="M7 20V4"/><path d="M11 20v-9"/><path d="M15 20V6"/><path d="M19 20v-7"/></svg>
