@@ -616,7 +616,7 @@
   .footer-nav-center {
     position: fixed;
     left: 50%;
-    bottom: 70px;
+    bottom: 75px;
     transform: translateX(-50%);
     width: 64px;
     height: 64px;
@@ -627,8 +627,8 @@
     justify-content: center;
     cursor: pointer;
     z-index: 100;
-    box-shadow: 0 4px 16px rgba(230, 74, 25, 0.5);
-    font-size: 36px;
+    box-shadow: 0 6px 20px rgba(230, 74, 25, 0.6);
+    font-size: 40px;
     color: white;
     font-weight: 300;
     line-height: 1;
@@ -828,12 +828,12 @@
       <div class="total-value" id="total-valor">S/ 0.00</div>
     </section>
 
-    <div class="actions">
-      <button class="btn btn-secondary" onclick="revisarAhora(this)">
+    <div class="actions" style="gap: 0;">
+      <button class="btn btn-secondary" onclick="revisarAhora(this)" style="flex: 1;">
         <svg style="width:18px; height:18px; stroke-width:1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 0 0 14.85-3.36M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64"></path></svg>
         <span>Revisar</span>
       </button>
-      <button class="btn btn-primary" onclick="abrirModalCrear()">
+      <button class="btn btn-primary" onclick="abrirModalCrear()" style="display: none;">
         <span>+ Manual</span>
       </button>
     </div>
