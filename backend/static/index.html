@@ -1259,21 +1259,6 @@
       console.error("Error verificando status:", e);
     }
 
-    // Actualizar foto en header si cambió
-    try {
-      const profileRes = await fetch('/api/profile', { headers: obtenerHeadersConAuth() });
-      if (profileRes.ok) {
-        const profile = await profileRes.json();
-        if (profile.profile_photo_url) {
-          localStorage.setItem('profile_photo_url', profile.profile_photo_url);
-          const headerFoto = document.getElementById('header-profile-photo');
-          if (headerFoto) headerFoto.src = profile.profile_photo_url;
-        }
-      }
-    } catch (e) {
-      console.error("Error actualizando foto:", e);
-    }
-
     const endpoint = vistaActual === "todos" ? "/api/gastos/todos" : `/api/gastos/${vistaActual}`;
     const res = await fetch(`${API}${endpoint}`, {
       headers: obtenerHeadersConAuth()
