@@ -20,6 +20,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+import auth as auth_module
+
 load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -202,6 +204,12 @@ def obtener_correos_nuevos(ya_procesados_fn, token_json_str=None):
     ya_procesados_fn: función que recibe un email_id y devuelve True/False
     token_json_str: token JSON del usuario (si es None, usa el token global del ambiente)
     """
+    # Intentar renovar el token si es necesario
+    if token_json_str:
+        renewed_token = auth_module.refresh_google_token(token_json_str)
+        if renewed_token:
+            token_json_str = renewed_token
+
     service = _get_service(token_json_str)
     if not service:
         print("⚠️  credentials.json no configurado. Modo demo: sin scraping de Gmail")

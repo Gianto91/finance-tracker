@@ -127,3 +127,36 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
 
     print(f"✅ Usuario autenticado: {email} (ID: {user['id']})")
     return (user["id"], jwt_token, user_info)
+
+
+def refresh_google_token(token_json_str: str) -> Optional[str]:
+    """Renueva el access_token de Google usando el refresh_token."""
+    try:
+        token_data = json.loads(token_json_str)
+        refresh_token = token_data.get("refresh_token")
+
+        if not refresh_token:
+            print("⚠️ No hay refresh_token disponible")
+            return None
+
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token",
+        }
+
+        response = requests.post(token_url, data=data)
+        if response.status_code == 200:
+            new_token = response.json()
+            # Google no devuelve refresh_token en la renovación, mantener el antiguo
+            new_token["refresh_token"] = refresh_token
+            print("✅ Access token renovado exitosamente")
+            return json.dumps(new_token)
+        else:
+            print(f"❌ Error al renovar token: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ Error en refresh_google_token: {e}")
+        return None

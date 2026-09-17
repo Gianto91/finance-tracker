@@ -81,6 +81,14 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
             return database.gasto_ya_existe(email_id, user_id)
 
         try:
+            # Intentar renovar el token de Google si es necesario
+            if token_json_str:
+                renewed_token = auth.refresh_google_token(token_json_str)
+                if renewed_token:
+                    token_json_str = renewed_token
+                    # Guardar el token renovado en la BD
+                    database.update_user_token(user_id, renewed_token)
+
             correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str)
             if correos is None:
                 error_msg = "Token de Gmail expirado. Por favor reconéctate con Google."
