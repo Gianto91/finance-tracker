@@ -2146,26 +2146,41 @@
     document.getElementById('modal-sesion-expirada').style.display = 'flex';
   }
 
-  // Pull-to-refresh functionality
+  // Pull-to-refresh functionality (all tabs)
   let touchStartY = 0;
   let isRefreshing = false;
 
-  document.addEventListener('touchstart', (e) => {
-    if (window.scrollY === 0) {
-      touchStartY = e.touches[0].clientY;
-    }
-  }, false);
+  function setupPullToRefresh() {
+    const appShell = document.querySelector('.app-shell');
+    if (!appShell) return;
 
-  document.addEventListener('touchmove', (e) => {
-    if (isRefreshing || window.scrollY !== 0) return;
-    const touchY = e.touches[0].clientY;
-    const diff = touchY - touchStartY;
-    if (diff > 80) { // 80px swipe down
-      isRefreshing = true;
-      cargarDatos();
-      setTimeout(() => { isRefreshing = false; }, 1000);
-    }
-  }, false);
+    appShell.addEventListener('touchstart', (e) => {
+      const activeTab = document.querySelector('.tab-content.active');
+      const scrollTop = activeTab ? activeTab.scrollTop : window.scrollY;
+      if (scrollTop === 0) {
+        touchStartY = e.touches[0].clientY;
+      }
+    }, false);
+
+    appShell.addEventListener('touchmove', (e) => {
+      if (isRefreshing) return;
+      const activeTab = document.querySelector('.tab-content.active');
+      const scrollTop = activeTab ? activeTab.scrollTop : window.scrollY;
+
+      if (scrollTop !== 0) return;
+
+      const touchY = e.touches[0].clientY;
+      const diff = touchY - touchStartY;
+
+      if (diff > 80) { // 80px swipe down
+        isRefreshing = true;
+        cargarDatos();
+        setTimeout(() => { isRefreshing = false; }, 1000);
+      }
+    }, false);
+  }
+
+  setupPullToRefresh();
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
