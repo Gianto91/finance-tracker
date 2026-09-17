@@ -414,6 +414,12 @@ def is_scraping(user_id: str) -> bool:
         return row[0] if row else False
 
 
+def update_profile_photo(user_id: str, photo_url: str):
+    """Actualiza la URL de la foto de perfil del usuario."""
+    with get_cursor() as cur:
+        cur.execute("UPDATE users SET profile_photo_url = %s WHERE id = %s", (photo_url, user_id))
+
+
 def _add_column_if_missing(column_name: str, column_type: str):
     """Agrega una columna a la tabla users si no existe. Cada columna en su propia transacción."""
     try:
@@ -432,6 +438,7 @@ def migrate_schema():
     _add_column_if_missing("last_scrape_error", "TEXT")
     _add_column_if_missing("scraping_in_progress", "BOOLEAN DEFAULT FALSE")
     _add_column_if_missing("first_scrape_attempted", "BOOLEAN DEFAULT FALSE")
+    _add_column_if_missing("profile_photo_url", "TEXT")
 
 
 def buscar_gastos(q="", categoria="", desde="", hasta="", user_id: str = None):

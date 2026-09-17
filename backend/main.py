@@ -504,6 +504,44 @@ def auth_logout():
     return {"status": "ok", "message": "Sesión cerrada. Elimina el token del cliente."}
 
 
+@app.post("/api/profile/photo")
+async def upload_profile_photo(request: Request):
+    """Subir foto de perfil del usuario."""
+    user_id = obtener_user_id(request)
+    if not user_id or user_id == "legacy-user":
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        form = await request.form()
+        file = form.get("file")
+
+        if not file:
+            raise HTTPException(status_code=400, detail="No se proporcionó archivo")
+
+        # Crear directorio si no existe
+        import os
+        photo_dir = "static/images/profile-photos"
+        os.makedirs(photo_dir, exist_ok=True)
+
+        # Guardar archivo con nombre del usuario
+        filename = f"{user_id}.jpg"
+        filepath = os.path.join(photo_dir, filename)
+
+        # Leer y guardar el archivo
+        contents = await file.read()
+        with open(filepath, "wb") as f:
+            f.write(contents)
+
+        # Guardar URL en BD
+        photo_url = f"/images/profile-photos/{filename}"
+        database.update_profile_photo(user_id, photo_url)
+
+        return {"status": "ok", "photo_url": photo_url}
+    except Exception as e:
+        print(f"❌ Error al subir foto: {e}")
+        raise HTTPException(status_code=500, detail="Error al subir foto")
+
+
 @app.post("/api/auth/migrate-legacy")
 def auth_migrate_legacy(user_id: str = Depends(obtener_user_id)):
     """Migra gastos legacy al usuario actual."""
