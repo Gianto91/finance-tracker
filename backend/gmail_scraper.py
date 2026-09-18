@@ -21,6 +21,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 import auth as auth_module
+import database
 
 load_dotenv()
 
