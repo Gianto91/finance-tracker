@@ -197,18 +197,25 @@ def _extraer_texto(payload) -> str:
     return texto_plano
 
 
-def obtener_correos_nuevos(ya_procesados_fn, token_json_str=None):
+def obtener_correos_nuevos(ya_procesados_fn, token_json_str=None, user_id=None):
     """
     Devuelve una lista de dicts: {id, asunto, remitente, texto}
     para correos bancarios que aún no están en la base de datos.
     ya_procesados_fn: función que recibe un email_id y devuelve True/False
     token_json_str: token JSON del usuario (si es None, usa el token global del ambiente)
+    user_id: ID del usuario para guardar token renovado en BD
     """
     # Intentar renovar el token si es necesario
     if token_json_str:
         renewed_token = auth_module.refresh_google_token(token_json_str)
         if renewed_token:
             token_json_str = renewed_token
+            # Guardar token renovado en BD para futuros usos
+            if user_id:
+                try:
+                    database.update_user_token(user_id, renewed_token)
+                except Exception as e:
+                    print(f"⚠️ No se pudo guardar token renovado: {e}")
 
     service = _get_service(token_json_str)
     if not service:
