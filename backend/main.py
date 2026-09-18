@@ -72,7 +72,14 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
         token_json_str = None
         if user and user.get("google_token"):
             token_json_str = user["google_token"]
-            print(f"✅ Usando token del usuario {user_id}")
+            # Validar que el token tiene refresh_token
+            try:
+                import json
+                token_data = json.loads(token_json_str)
+                has_refresh = "refresh_token" in token_data
+                print(f"✅ Usando token del usuario {user_id} (tiene refresh_token: {has_refresh})")
+            except:
+                print(f"✅ Usando token del usuario {user_id}")
         else:
             print(f"⚠️  No hay token para {user_id}, intentando token global")
 
@@ -83,11 +90,15 @@ def revisar_correos_nuevos(user_id: str = "legacy-user"):
         try:
             # Intentar renovar el token de Google si es necesario
             if token_json_str:
+                print(f"🔄 Intentando renovar token para {user_id}...")
                 renewed_token = auth.refresh_google_token(token_json_str)
                 if renewed_token:
                     token_json_str = renewed_token
                     # Guardar el token renovado en la BD
                     database.update_user_token(user_id, renewed_token)
+                    print(f"💾 Token renovado y guardado en BD para {user_id}")
+                else:
+                    print(f"⚠️ No se pudo renovar token para {user_id}")
 
             correos = gmail_scraper.obtener_correos_nuevos(gasto_existe_para_user, token_json_str, user_id)
             if correos is None:

@@ -152,8 +152,16 @@ def refresh_google_token(token_json_str: str) -> Optional[str]:
             new_token = response.json()
             # Google no devuelve refresh_token en la renovación, mantener el antiguo
             new_token["refresh_token"] = refresh_token
-            print("✅ Access token renovado exitosamente")
-            return json.dumps(new_token)
+
+            # Validar que el token renovado tiene todos los campos necesarios
+            if "access_token" in new_token and "refresh_token" in new_token:
+                result = json.dumps(new_token)
+                print("✅ Access token renovado exitosamente")
+                print(f"📝 Token tiene refresh_token: {'refresh_token' in new_token}")
+                return result
+            else:
+                print(f"❌ Token renovado incompleto: {new_token.keys()}")
+                return None
         else:
             print(f"❌ Error al renovar token: {response.status_code} - {response.text}")
             return None
