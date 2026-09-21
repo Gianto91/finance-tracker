@@ -461,6 +461,7 @@ def buscar_gastos(q: str = "", categoria: str = "", desde: str = "", hasta: str 
 @app.get("/api/auth/login")
 def auth_login():
     """Redirige a Google OAuth para que el usuario se autentique."""
+    from urllib.parse import quote
     client_id = auth.GOOGLE_CLIENT_ID
     redirect_uri = auth.GOOGLE_REDIRECT_URI
     # Agregar scope de Gmail para que cada usuario pueda scrapear sus propios emails
@@ -472,7 +473,7 @@ def auth_login():
     google_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={client_id}&"
-        f"redirect_uri={redirect_uri}&"
+        f"redirect_uri={quote(redirect_uri, safe='')}&"
         f"response_type=code&"
         f"scope={scope}&"
         f"access_type=offline"
