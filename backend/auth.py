@@ -54,6 +54,7 @@ def exchange_google_code(code: str) -> Optional[dict]:
         "client_secret": GOOGLE_CLIENT_SECRET,
         "redirect_uri": GOOGLE_REDIRECT_URI,
         "grant_type": "authorization_code",
+        "access_type": "offline",  # Requerido para obtener refresh_token
     }
 
     try:

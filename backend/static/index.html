@@ -882,10 +882,10 @@
       <div id="insight-alert" class="alert-text" style="display:none;"></div>
     </section>
 
-    <section class="budget-card" id="budget-card" style="display:none;">
+    <section class="budget-card" id="budget-card" style="display:none; cursor:pointer;" onclick="verificarYMostrarLimiteSuperado()">
       <div class="budget-header">
         <div class="budget-label">📊 Límite de presupuesto</div>
-        <button class="budget-btn" onclick="abrirModalLimite()">Editar</button>
+        <button class="budget-btn" onclick="abrirModalLimite(event)">Editar</button>
       </div>
       <div class="progress-bar">
         <div class="progress-fill" id="budget-fill" style="width: 0%;"></div>
@@ -1124,8 +1124,18 @@
     <div style="background:#1a1a1a; border-radius:20px; padding:40px; max-width:340px; border:1px solid rgba(230, 74, 25, 0.3); text-align:center;">
       <div style="font-size:48px; margin-bottom:20px;">⚠️</div>
       <h2 style="margin:0 0 15px; font-size:20px; color:var(--text);">Sesión expirada</h2>
-      <p style="margin:0 0 20px; font-size:14px; color:var(--text-soft); line-height:1.6;">Tu sesión ha expirado. Por favor, vuelve a iniciar sesión para continuar usando Hormiguita.</p>
+      <p style="margin:0 0 20px; font-size:14px; color:var(--text-soft); line-height:1.6;">Tu sesión ha expirado. Por favor, vuelve a iniciar sesión para continuar usando Hormiquita.</p>
       <button onclick="cerrarSesion()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px;">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <div id="modal-limite-superado" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; padding:20px; align-items:center; justify-content:center;">
+    <div style="background:#1a1a1a; border-radius:20px; padding:40px; max-width:340px; border:1px solid rgba(230, 74, 25, 0.3); text-align:center;">
+      <img src="images/hormiga-alerta.png" alt="Hormiguita alerta" style="width:80px; height:80px; margin-bottom:20px;">
+      <h2 style="margin:0 0 15px; font-size:20px; color:var(--text);">⚠️ Límite superado</h2>
+      <p style="margin:0 0 10px; font-size:14px; color:var(--text-soft); line-height:1.6;" id="modal-limite-texto">Has superado tu límite mensual de presupuesto.</p>
+      <p style="margin:0 0 20px; font-size:16px; color:var(--accent); font-weight:600;" id="modal-limite-exceso">Exceso: S/ 0.00</p>
+      <button onclick="cerrarModalLimiteSuperado()" style="width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px; color:#000; cursor:pointer; font-weight:600; font-size:14px;">Entendido</button>
     </div>
   </div>
 
@@ -1650,7 +1660,8 @@
     }
   }
 
-  function abrirModalLimite() {
+  function abrirModalLimite(event) {
+    if (event) event.stopPropagation();
     const monto = prompt("¿Cuál es tu límite mensual de presupuesto? (en soles)");
     if (!monto) return;
 
@@ -1779,7 +1790,30 @@
     }
   }
 
+  function verificarYMostrarLimiteSuperado() {
+    const limiteTexto = document.getElementById("budget-texto")?.textContent || "";
+    const partes = limiteTexto.split(" de ");
+    if (partes.length === 2) {
+      const actual = parseFloat(partes[0].replace("S/ ", "").replace(",", "."));
+      const limite = parseFloat(partes[1].replace("S/ ", "").replace(",", "."));
+      if (actual > limite) {
+        const exceso = actual - limite;
+        document.getElementById("modal-limite-exceso").textContent = `Exceso: S/ ${exceso.toFixed(2)}`;
+        document.getElementById("modal-limite-superado").style.display = "flex";
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function cerrarModalLimiteSuperado() {
+    document.getElementById("modal-limite-superado").style.display = "none";
+  }
+
   function abrirModalCrear() {
+    if (verificarYMostrarLimiteSuperado()) {
+      return;
+    }
     document.getElementById("editar-id").value = "";
     document.getElementById("editar-comercio").value = "";
     document.getElementById("editar-monto").value = "";
@@ -1938,6 +1972,7 @@
       vistaActual = "dia";
       cargarDatos();
     } else if (tab === "estadisticas") {
+      verificarYMostrarLimiteSuperado();
       setTimeout(() => actualizarGraficos(), 100);
     } else if (tab === "movimientos") {
       vistaActual = "todos";
