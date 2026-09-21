@@ -473,7 +473,7 @@ def auth_login():
     google_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={client_id}&"
-        f"redirect_uri={quote(redirect_uri, safe='')}&"
+        f"redirect_uri={quote(redirect_uri, safe=':/')}&"
         f"response_type=code&"
         f"scope={scope}&"
         f"access_type=offline"
