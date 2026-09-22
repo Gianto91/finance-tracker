@@ -598,8 +598,10 @@ def serve_index():
     with open("static/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
-# Mount static files ANTES del catch-all
-app.mount("/", StaticFiles(directory="static"), name="static")
+# Montar archivos estáticos con prefijo específico
+app.mount("/images", StaticFiles(directory="static/images"), name="images")
+app.mount("/css", StaticFiles(directory="static/css"), name="css")
+app.mount("/js", StaticFiles(directory="static/js"), name="js")
 
 @app.get("/{path_name:path}", response_class=HTMLResponse)
 def serve_spa(path_name: str):
