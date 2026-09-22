@@ -1152,26 +1152,26 @@
   <div class="footer-nav-center" onclick="abrirModalCrear()">+</div>
 
   <nav class="footer-nav" aria-label="Navegación principal">
-    <button class="nav-item active" onclick="cambiarTab('inicio')" style="border:none; background:none; cursor:pointer;">
+    <button class="nav-item active" data-tab="inicio" onclick="cambiarTab('inicio')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg>
       </span>
       <span>Inicio</span>
     </button>
-    <button class="nav-item" onclick="cambiarTab('movimientos')" style="border:none; background:none; cursor:pointer;">
+    <button class="nav-item" data-tab="movimientos" onclick="cambiarTab('movimientos')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
       </span>
       <span>Movimientos</span>
     </button>
     <div style="flex: 1;"></div>
-    <button class="nav-item" onclick="cambiarTab('estadisticas')" style="border:none; background:none; cursor:pointer;">
+    <button class="nav-item" data-tab="estadisticas" onclick="cambiarTab('estadisticas')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 20V8"/><path d="M7 20V4"/><path d="M11 20v-9"/><path d="M15 20V6"/><path d="M19 20v-7"/></svg>
       </span>
       <span>Estadísticas</span>
     </button>
-    <button class="nav-item" onclick="cambiarTab('perfil')" style="border:none; background:none; cursor:pointer;">
+    <button class="nav-item" data-tab="perfil" onclick="cambiarTab('perfil')" style="border:none; background:none; cursor:pointer;">
       <span class="nav-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
       </span>
@@ -1969,11 +1969,12 @@
     });
   }
 
-  function cambiarTab(tab) {
+  function mostrarTab(tab) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.getElementById(`tab-${tab}`).classList.add("active");
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-    event.target.closest(".nav-item").classList.add("active");
+    document.querySelector(`[data-tab="${tab}"]`)?.classList.add("active");
+
     if (tab === "inicio") {
       vistaActual = "dia";
       cargarDatos();
@@ -1987,6 +1988,43 @@
       cargarPerfilUsuario();
     }
   }
+
+  function inicializarTab() {
+    const path = window.location.pathname;
+    const tabMap = {
+      "/home": "inicio",
+      "/": "inicio",
+      "/movimientos": "movimientos",
+      "/estadisticas": "estadisticas",
+      "/miperfil": "perfil"
+    };
+    const tab = tabMap[path] || "inicio";
+    mostrarTab(tab);
+  }
+
+  function cambiarTab(tab) {
+    mostrarTab(tab);
+    const urlMap = {
+      "inicio": "/home",
+      "movimientos": "/movimientos",
+      "estadisticas": "/estadisticas",
+      "perfil": "/miperfil"
+    };
+    window.history.pushState({ tab }, "", urlMap[tab]);
+  }
+
+  window.addEventListener("popstate", () => {
+    const path = window.location.pathname;
+    const tabMap = {
+      "/home": "inicio",
+      "/": "inicio",
+      "/movimientos": "movimientos",
+      "/estadisticas": "estadisticas",
+      "/miperfil": "perfil"
+    };
+    const tab = tabMap[path] || "inicio";
+    mostrarTab(tab);
+  });
 
   async function cargarPerfilUsuario() {
     const nombre = localStorage.getItem('user_name') || 'Usuario';
@@ -2295,7 +2333,7 @@
       fetch(`${API}/api/auth/migrate-legacy`, { method: 'POST', headers: obtenerHeadersConAuth() }).catch(() => {});
       localStorage.setItem('migracion_legacy_ejecutada', 'true');
     }
-    cargarDatos();
+    inicializarTab();
     setInterval(cargarDatos, 60000);
     // Mostrar modal Beta después de cargar datos
   }
