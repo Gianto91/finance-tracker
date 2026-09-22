@@ -601,7 +601,8 @@ def serve_index():
 @app.get("/{path_name:path}", response_class=HTMLResponse)
 def serve_spa(path_name: str):
     """Catch-all para SPA routing: sirve index.html para rutas no-API."""
-    if path_name.startswith("api/"):
+    # Excluir rutas de API y archivos estáticos
+    if path_name.startswith(("api/", "images/", "css/", "js/", "static/")):
         raise HTTPException(status_code=404)
     with open("static/index.html", "r", encoding="utf-8") as f:
         return f.read()
