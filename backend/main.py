@@ -598,4 +598,12 @@ def serve_index():
     with open("static/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+@app.get("/{path_name:path}", response_class=HTMLResponse)
+def serve_spa(path_name: str):
+    """Catch-all para SPA routing: sirve index.html para rutas no-API."""
+    if path_name.startswith("api/"):
+        raise HTTPException(status_code=404)
+    with open("static/index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
 app.mount("/", StaticFiles(directory="static"), name="static")
