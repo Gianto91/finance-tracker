@@ -37,6 +37,22 @@
     --radius-xs: 10px;
   }
 
+  /* Modo claro */
+  :root[data-theme="light"] {
+    --bg: #EDF2C2;
+    --bg-soft: #f0f5d3;
+    --surface: #ffffff;
+    --surface-2: #f8fce6;
+    --card: #fffef5;
+    --line: #e8ead4;
+    --text: #1a1a1a;
+    --text-soft: #4a4a4a;
+    --muted: #7a7a7a;
+    --green-deep: #d9e8d1;
+    --green-card: #e8f5dd;
+    --shadow: rgba(0,0,0,.08);
+  }
+
   * { box-sizing: border-box; touch-action: manipulation; }
 
   svg {
@@ -858,6 +874,7 @@
         </div>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="btn-tema" onclick="toggleTema()" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--card); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid var(--line);">🌙</button>
         <img id="header-profile-photo" src="" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid var(--accent);" onclick="cambiarTab('perfil')">
       </div>
     </header>
@@ -1200,6 +1217,29 @@
   const CATEGORIAS = ["Comida", "Transporte", "Servicios", "Hogar", "Salud", "Gasto Hormiga", "Suscripciones", "Impuestos", "Mascotas", "Transferencias", "Otros"];
   const COLORES_CATEGORIA = ["#E64A19", "#58c4b1", "#f2bd63", "#f87171", "#9e83d8", "#78a9db", "#d87ca8", "#e2a76f", "#FFD700", "#8b929d", "#6c757d"];
   let chartsInstances = {};
+
+  // Tema claro/oscuro
+  function inicializarTema() {
+    const temaSaved = localStorage.getItem('tema') || 'dark';
+    aplicarTema(temaSaved);
+  }
+
+  function aplicarTema(tema) {
+    if (tema === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.getElementById('btn-tema').textContent = '☀️';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('btn-tema').textContent = '🌙';
+    }
+    localStorage.setItem('tema', tema);
+  }
+
+  function toggleTema() {
+    const temaCurrent = localStorage.getItem('tema') || 'dark';
+    const temaNew = temaCurrent === 'light' ? 'dark' : 'light';
+    aplicarTema(temaNew);
+  }
 
   // Auth
   function verificarAutenticacion() {
@@ -2394,6 +2434,9 @@
     const indicator = document.querySelector('.pull-to-refresh-indicator');
     if (indicator) indicator.classList.remove('show');
   }, false);
+
+  // Inicializar tema claro/oscuro
+  inicializarTema();
 
   // Verificar autenticación al cargar la página
   if (verificarAutenticacion()) {
