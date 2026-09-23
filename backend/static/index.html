@@ -1245,11 +1245,75 @@
         }
       }).catch(() => {});
 
+      inicializarRefreshAutomatico();
       return true;
     }
   }
 
+  let tokenRefreshInterval = null;
+
+  function inicializarRefreshAutomatico() {
+    if (tokenRefreshInterval) clearInterval(tokenRefreshInterval);
+
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return;
+
+    try {
+      // Decodificar JWT (sin verificar firma, solo leer payload)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // Convertir a milisegundos
+      const ahora = Date.now();
+      const tiempoRestante = expirationTime - ahora;
+
+      // Renovar 1 minuto (60000ms) antes de expiración
+      const tiempoParaRenovar = tiempoRestante - 60000;
+
+      if (tiempoParaRenovar > 0) {
+        tokenRefreshInterval = setTimeout(() => {
+          renovarTokenJWT();
+        }, tiempoParaRenovar);
+      } else if (tiempoRestante > 0) {
+        // Si quedan menos de 1 minuto, renovar inmediatamente
+        renovarTokenJWT();
+      }
+    } catch (e) {
+      console.error('Error al decodificar token:', e);
+    }
+  }
+
+  function renovarTokenJWT() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return;
+
+    fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(r => {
+      if (r.ok) return r.json();
+      throw new Error('Error al renovar token');
+    })
+    .then(data => {
+      if (data.token) {
+        localStorage.setItem('jwt_token', data.token);
+        console.log('✅ Token renovado automáticamente');
+        // Reinicializar el intervalo con el nuevo token
+        inicializarRefreshAutomatico();
+      }
+    })
+    .catch(e => {
+      console.error('Error renovando token:', e);
+      // Si falla, intentar de nuevo en 1 minuto
+      if (tokenRefreshInterval) clearInterval(tokenRefreshInterval);
+      tokenRefreshInterval = setTimeout(renovarTokenJWT, 60000);
+    });
+  }
+
   function cerrarSesion() {
+    if (tokenRefreshInterval) clearInterval(tokenRefreshInterval);
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');

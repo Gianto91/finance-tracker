@@ -481,6 +481,24 @@ def auth_login():
     return RedirectResponse(url=google_auth_url)
 
 
+@app.post("/api/auth/refresh")
+def auth_refresh(request: Request):
+    """Renueva el JWT token silenciosamente."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return {"error": "No token provided"}
+
+    token = auth_header.split(" ")[1]
+    user_id = auth.verify_jwt_token(token)
+
+    if not user_id:
+        return {"error": "Invalid or expired token"}
+
+    # Crear nuevo JWT token
+    new_token = auth.create_jwt_token(user_id)
+    return {"token": new_token}
+
+
 @app.get("/api/auth/callback")
 def auth_callback(code: str):
     """Callback de Google OAuth. Intercambia el código por un JWT token."""
