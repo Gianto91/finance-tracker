@@ -55,6 +55,41 @@
     --shadow: rgba(0,0,0,.08);
   }
 
+  :root[data-theme="light"] .total-card {
+    background: linear-gradient(180deg, #EDF2C2 0%, #EDF2C2 100%) !important;
+    border: 1px solid #d4daa5 !important;
+  }
+
+  :root[data-theme="light"] .total-card::before {
+    background: transparent !important;
+  }
+
+  :root[data-theme="light"] .total-label {
+    color: #BF3E21 !important;
+  }
+
+  :root[data-theme="light"] .list-card {
+    background: #EDF2C2 !important;
+    border-color: #d4daa5 !important;
+  }
+
+  :root[data-theme="light"] button {
+    background-color: #BF3E21 !important;
+    color: #ffffff !important;
+    border-color: #BF3E21 !important;
+  }
+
+  :root[data-theme="light"] .toggle button.active {
+    background: #BF3E21 !important;
+    color: #ffffff !important;
+  }
+
+  :root[data-theme="light"] .toggle button {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    border: 1px solid #d4daa5 !important;
+  }
+
   * { box-sizing: border-box; touch-action: manipulation; }
 
   svg {
