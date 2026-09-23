@@ -483,7 +483,7 @@ def auth_login():
 
 @app.post("/api/auth/refresh")
 def auth_refresh(request: Request):
-    """Renueva el JWT token silenciosamente."""
+    """Renueva el JWT token y el token de Google silenciosamente."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return {"error": "No token provided"}
@@ -493,6 +493,18 @@ def auth_refresh(request: Request):
 
     if not user_id:
         return {"error": "Invalid or expired token"}
+
+    # Renovar token de Google en background (sin bloquear respuesta)
+    try:
+        user = database.get_user(user_id)
+        if user and user.get('token'):
+            threading.Thread(
+                target=auth.refresh_google_token,
+                args=(user['token'],),
+                kwargs={'user_id': user_id}
+            ).start()
+    except Exception as e:
+        print(f"⚠️ Error renovando token de Google: {e}")
 
     # Crear nuevo JWT token
     new_token = auth.create_jwt_token(user_id)

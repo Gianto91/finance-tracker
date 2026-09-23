@@ -130,8 +130,8 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
     return (user["id"], jwt_token, user_info)
 
 
-def refresh_google_token(token_json_str: str) -> Optional[str]:
-    """Renueva el access_token de Google usando el refresh_token."""
+def refresh_google_token(token_json_str: str, user_id: Optional[str] = None) -> Optional[str]:
+    """Renueva el access_token de Google usando el refresh_token y lo guarda en BD si user_id es proporcionado."""
     try:
         token_data = json.loads(token_json_str)
         refresh_token = token_data.get("refresh_token")
@@ -159,6 +159,12 @@ def refresh_google_token(token_json_str: str) -> Optional[str]:
                 result = json.dumps(new_token)
                 print("✅ Access token renovado exitosamente")
                 print(f"📝 Token tiene refresh_token: {'refresh_token' in new_token}")
+
+                # Guardar en BD si user_id es proporcionado
+                if user_id:
+                    database.update_user_token(user_id, result)
+                    print(f"📝 Token de Google guardado en BD para usuario {user_id}")
+
                 return result
             else:
                 print(f"❌ Token renovado incompleto: {new_token.keys()}")
