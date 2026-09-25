@@ -60,7 +60,10 @@ def exchange_google_code(code: str) -> Optional[dict]:
     try:
         response = requests.post(token_url, data=data)
         if response.status_code == 200:
-            return response.json()
+            token_data = response.json()
+            print(f"📝 Google token response keys: {token_data.keys()}")
+            print(f"📝 Tiene refresh_token en respuesta: {'refresh_token' in token_data}")
+            return token_data
         else:
             print(f"❌ Error al intercambiar código: {response.status_code} - {response.text}")
             return None
@@ -116,6 +119,10 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
 
     # Obtener o crear usuario
     user = database.get_or_create_user(google_id, email, nombre)
+
+    # Validar que el token_response tiene refresh_token
+    print(f"📝 Token response keys: {token_response.keys()}")
+    print(f"📝 Tiene refresh_token: {'refresh_token' in token_response}")
 
     # Guardar el token COMPLETO como JSON (para que el scraper pueda acceder a Gmail de cada usuario)
     database.update_user_token(user["id"], json.dumps(token_response))
