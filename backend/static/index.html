@@ -831,7 +831,7 @@
   <div id="banner-sesion-expirada" style="display:none; position:fixed; top:0; left:0; right:0; background:linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); color:#000; padding:16px 20px; z-index:1000; text-align:center; font-weight:600;">
     <div style="max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:15px;">
       <span style="flex:1;">⚠️ Tu sesión de Gmail expiró. Los scrapeos se han detenido.</span>
-      <button onclick="reautenticarGoogle()" style="background:rgba(0,0,0,0.2); border:none; color:#000; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; white-space:nowrap;">Reconectarse</button>
+      <button onclick="cerrarSesion()" style="background:rgba(0,0,0,0.2); border:none; color:#000; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; white-space:nowrap;">Reconectarse</button>
     </div>
   </div>
 
@@ -1328,12 +1328,6 @@
       }
     });
     location.href = '/';
-  }
-
-  function reautenticarGoogle() {
-    // Redirigir a login de Google sin cerrar sesión completamente
-    // El usuario se re-autenticará y obtendrá un nuevo refresh_token
-    location.href = '/api/auth/login';
   }
 
   function obtenerHeadersConAuth() {
