@@ -830,8 +830,8 @@
   <!-- Banner de sesión expirada (aparece en la parte superior) -->
   <div id="banner-sesion-expirada" style="display:none; position:fixed; top:0; left:0; right:0; background:linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); color:#000; padding:16px 20px; z-index:1000; text-align:center; font-weight:600;">
     <div style="max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:15px;">
-      <span style="flex:1;" id="banner-texto">⚠️ Tu sesión de Gmail expiró. Los scrapeos se han detenido.</span>
-      <button id="banner-boton" onclick="reautenticarGoogle()" style="background:rgba(0,0,0,0.2); border:none; color:#000; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; white-space:nowrap;">Reconectarse</button>
+      <span style="flex:1;">⚠️ Tu sesión de Gmail expiró. Los scrapeos se han detenido.</span>
+      <button onclick="reautenticarGoogle()" style="background:rgba(0,0,0,0.2); border:none; color:#000; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; white-space:nowrap;">Reconectarse</button>
     </div>
   </div>
 
@@ -1346,21 +1346,12 @@
   }
 
   async function cargarDatos() {
-    // Verificar si hay error de sesión expirada o sin refresh_token
+    // Verificar si hay error de sesión expirada
     try {
       const statusRes = await fetch(`${API}/api/scrape-status`, { headers: obtenerHeadersConAuth() });
       const statusData = await statusRes.json();
-      if (statusData.status === "error") {
-        if (statusData.type === "no_refresh_token") {
-          // Instrucciones para revocar acceso anterior
-          document.getElementById('banner-texto').innerHTML = '⚠️ Necesitas revocar el acceso anterior en Google. Haz click en "Reconectarse" y selecciona tu cuenta nuevamente.';
-          document.getElementById('banner-boton').textContent = 'Reconectarse';
-          document.getElementById('banner-sesion-expirada').style.display = 'flex';
-        } else if (statusData.type === "token_expired") {
-          document.getElementById('banner-texto').innerHTML = '⚠️ Tu sesión de Gmail expiró. Los scrapeos se han detenido.';
-          document.getElementById('banner-boton').textContent = 'Reconectarse';
-          document.getElementById('banner-sesion-expirada').style.display = 'flex';
-        }
+      if (statusData.status === "error" && statusData.type === "token_expired") {
+        document.getElementById('banner-sesion-expirada').style.display = 'flex';
       } else {
         document.getElementById('banner-sesion-expirada').style.display = 'none';
       }
