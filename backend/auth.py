@@ -124,11 +124,17 @@ def handle_oauth_callback(code: str) -> Optional[tuple[str, str, dict]]:
     print(f"📝 Token response keys: {token_response.keys()}")
     print(f"📝 Tiene refresh_token: {'refresh_token' in token_response}")
 
+    # Si no hay refresh_token, significa que Google no lo devolvió
+    # Esto ocurre cuando el usuario ya autorizó antes y no revocó el acceso
+    if "refresh_token" not in token_response:
+        print("⚠️ Google no devolvió refresh_token. Usuario debe revocar acceso anterior.")
+        database.set_scrape_error(user["id"], "no_refresh_token")
+    else:
+        # Si hay refresh_token, limpiar cualquier error anterior
+        database.clear_scrape_error(user["id"])
+
     # Guardar el token COMPLETO como JSON (para que el scraper pueda acceder a Gmail de cada usuario)
     database.update_user_token(user["id"], json.dumps(token_response))
-
-    # Limpiar errores de scraping anteriores (el usuario se ha re-autenticado exitosamente)
-    database.clear_scrape_error(user["id"])
 
     # Crear JWT token
     jwt_token = create_jwt_token(user["id"])
