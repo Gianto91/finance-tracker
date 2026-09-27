@@ -476,8 +476,7 @@ def auth_login():
         f"redirect_uri={quote(redirect_uri, safe=':/')}&"
         f"response_type=code&"
         f"scope={scope}&"
-        f"access_type=offline&"
-        f"prompt=consent"
+        f"access_type=offline"
     )
     return RedirectResponse(url=google_auth_url)
 
