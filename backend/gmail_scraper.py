@@ -208,7 +208,7 @@ def obtener_correos_nuevos(ya_procesados_fn, token_json_str=None, user_id=None):
     """
     # Intentar renovar el token si es necesario
     if token_json_str:
-        renewed_token = auth_module.refresh_google_token(token_json_str)
+        renewed_token = auth_module.refresh_google_token(token_json_str, user_id=user_id)
         if renewed_token:
             token_json_str = renewed_token
             # Guardar token renovado en BD para futuros usos

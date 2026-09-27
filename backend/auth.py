@@ -177,6 +177,19 @@ def refresh_google_token(token_json_str: str, user_id: Optional[str] = None) -> 
                 print(f"❌ Token renovado incompleto: {new_token.keys()}")
                 return None
         else:
+            # Detectar si el refresh_token fue revocado/expirado
+            try:
+                error_data = response.json()
+                error_code = error_data.get("error", "")
+                if error_code == "invalid_grant":
+                    print("❌ Refresh token revocado o expirado. Usuario debe re-autenticarse.")
+                    # Marcar token como expirado en BD
+                    if user_id:
+                        database.set_scrape_error(user_id, "token_expired")
+                    return None
+            except:
+                pass
+
             print(f"❌ Error al renovar token: {response.status_code} - {response.text}")
             return None
     except Exception as e:
