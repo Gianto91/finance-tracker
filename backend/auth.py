@@ -19,7 +19,7 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/callback")
 
-JWT_EXPIRY_HOURS = 720  # 30 días
+JWT_EXPIRY_HOURS = 8760  # 1 año
 
 
 def create_jwt_token(user_id: str) -> str:
