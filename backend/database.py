@@ -217,14 +217,28 @@ def resumen_semana(user_id: str = "legacy-user"):
 
 
 def resumen_mes(user_id: str = "legacy-user"):
-    """Resumen de gastos del mes."""
+    """Resumen de gastos del mes (corte día 27)."""
     with get_cursor() as cur:
-        desde = datetime.now().replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
-        ).isoformat()
+        ahora = datetime.now()
+        # Corte de mes: día 27
+        if ahora.day <= 27:
+            desde = ahora.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            ).isoformat()
+            hasta = ahora.replace(
+                day=27, hour=23, minute=59, second=59, microsecond=999999
+            ).isoformat()
+        else:
+            # Si estamos en día 28-31, mostrar gastos del 1-27 de este mes
+            desde = ahora.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            ).isoformat()
+            hasta = ahora.replace(
+                day=27, hour=23, minute=59, second=59, microsecond=999999
+            ).isoformat()
         cur.execute(
-            "SELECT id, user_id, fecha, monto, comercio, categoria, metodo, email_id, creado_en, estado FROM gastos WHERE user_id = %s AND fecha >= %s AND estado = 'activo' ORDER BY fecha DESC",
-            (user_id, desde)
+            "SELECT id, user_id, fecha, monto, comercio, categoria, metodo, email_id, creado_en, estado FROM gastos WHERE user_id = %s AND fecha >= %s AND fecha <= %s AND estado = 'activo' ORDER BY fecha DESC",
+            (user_id, desde, hasta)
         )
         rows = cur.fetchall()
         return [{
